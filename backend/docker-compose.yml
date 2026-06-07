@@ -1,0 +1,35 @@
+# MongoDB для локальной разработки бэкенда FYDNE.
+# Запуск:  cd backend && docker compose up -d
+# Mongo:   mongodb://localhost:27017
+#
+# Залить дамп от основателя:
+#   mongorestore --uri="mongodb://localhost:27017" ./dump
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: fydne-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - fydne-mongo-data:/data/db
+      # положи сюда дамп и раскомментируй для авто-restore при первом старте:
+      # - ./dump:/docker-entrypoint-initdb.d/dump:ro
+    # Для локалки auth не включаем. Для прода — задать MONGO_INITDB_ROOT_*.
+
+  # Веб-морда для просмотра базы (опционально, удобно при восстановлении данных)
+  mongo-express:
+    image: mongo-express:latest
+    container_name: fydne-mongo-ui
+    restart: unless-stopped
+    depends_on:
+      - mongo
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://mongo:27017
+      ME_CONFIG_BASICAUTH: "false"
+
+volumes:
+  fydne-mongo-data:

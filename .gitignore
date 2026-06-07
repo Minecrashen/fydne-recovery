@@ -19,6 +19,11 @@ obj/
 *.bson
 *.dump
 *.archive
+dump/
+
+# Рабочие каталоги (клонируются/собираются локально, не в git)
+sources/          # клоны исходных репозиториев (clone-sources.ps1)
+dependencies/     # игровые DLL (gather-dependencies.ps1)
 
 # ОС / редакторы
 Thumbs.db
