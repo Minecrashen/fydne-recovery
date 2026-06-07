@@ -1,0 +1,29 @@
+# Секреты — НИКОГДА не коммитить
+*.key
+*.pem
+*.env
+.env
+secrets.*
+config.local.*
+*token*.txt
+
+# Бинарники и зависимости (брать из легальной установки сервера, не хранить в git)
+*.dll
+*.nupkg
+node_modules/
+packages/
+bin/
+obj/
+
+# Дампы БД (большие, не для git)
+*.bson
+*.dump
+*.archive
+
+# ОС / редакторы
+Thumbs.db
+.DS_Store
+.vs/
+.idea/
+*.user
+*.suo
