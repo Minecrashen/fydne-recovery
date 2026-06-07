@@ -9,10 +9,13 @@ using Lab = LabApi.Features.Wrappers;
 
 namespace Qurre.API
 {
-    public class Player
+    public partial class Player
     {
         /// <summary>Базовый объект LabAPI.</summary>
         public Lab.Player Base { get; }
+
+        /// <summary>Qurre-фича: произвольное хранилище данных на игрока.</summary>
+        internal readonly Dictionary<string, object> Vars = new Dictionary<string, object>();
 
         Player(Lab.Player labPlayer) { Base = labPlayer; }
 
@@ -32,6 +35,24 @@ namespace Qurre.API
 
         public ReferenceHub ReferenceHub => Base.ReferenceHub;
         public UnityEngine.GameObject GameObject => Base.GameObject;
+        public Mirror.NetworkConnectionToClient ConnectionToClient => Base.ConnectionToClient;
+
+        // Под-объекты Qurre (см. PlayerSubObjects.cs)
+        public UserInformationW UserInformation => new UserInformationW(Base);
+        public RoleInformationW RoleInformation => new RoleInformationW(Base);
+        public HealthInformationW HealthInformation => new HealthInformationW(Base);
+        public InventoryW Inventory => new InventoryW(Base);
+        public MovementStateW MovementState => new MovementStateW(Base);
+        public GamePlayW GamePlay => new GamePlayW(Base);
+        public ClientW Client => new ClientW(Base);
+        public VariablesW Variables => new VariablesW(this);
+
+        /// <summary>RA-бейдж (текст тега). Qurre Player.Tag.</summary>
+        public string Tag
+        {
+            get => Base.ReferenceHub.serverRoles.Network_myText ?? string.Empty;
+            set => Base.ReferenceHub.serverRoles.Network_myText = value;
+        }
 
         public override bool Equals(object obj) => obj is Player p && ReferenceEquals(p.Base, Base);
         public override int GetHashCode() => Base?.GetHashCode() ?? 0;
