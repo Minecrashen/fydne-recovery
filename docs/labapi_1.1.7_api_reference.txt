@@ -1,0 +1,617 @@
+﻿=== NAMESPACES ===
+LabApi.Events
+LabApi.Events.Arguments.Interfaces
+LabApi.Events.Arguments.Interfaces.Items
+LabApi.Events.Arguments.ObjectiveEvents
+LabApi.Events.Arguments.PlayerEvents
+LabApi.Events.Arguments.Scp0492Events
+LabApi.Events.Arguments.Scp049Events
+LabApi.Events.Arguments.Scp079Events
+LabApi.Events.Arguments.Scp096Events
+LabApi.Events.Arguments.Scp106Events
+LabApi.Events.Arguments.Scp127Events
+LabApi.Events.Arguments.Scp173Events
+LabApi.Events.Arguments.Scp3114Events
+LabApi.Events.Arguments.Scp914Events
+LabApi.Events.Arguments.Scp939Events
+LabApi.Events.Arguments.ScpEvents
+LabApi.Events.Arguments.ServerEvents
+LabApi.Events.Arguments.WarheadEvents
+LabApi.Events.CustomHandlers
+LabApi.Events.Handlers
+LabApi.Features
+LabApi.Features.Audio
+LabApi.Features.Console
+LabApi.Features.Enums
+LabApi.Features.Extensions
+LabApi.Features.Interfaces
+LabApi.Features.Permissions
+LabApi.Features.Permissions.Providers
+LabApi.Features.Stores
+LabApi.Features.Wrappers
+LabApi.Loader
+LabApi.Loader.Constants
+LabApi.Loader.Features.Commands
+LabApi.Loader.Features.Commands.Extensions
+LabApi.Loader.Features.Commands.Reload
+LabApi.Loader.Features.Configuration
+LabApi.Loader.Features.Misc
+LabApi.Loader.Features.Paths
+LabApi.Loader.Features.Plugins
+LabApi.Loader.Features.Plugins.Configuration
+LabApi.Loader.Features.Plugins.Enums
+LabApi.Loader.Features.Yaml
+LabApi.Loader.Features.Yaml.CustomConverters
+LabApi.Loader.Features.Yaml.Extensions
+
+=== EVENT HANDLERS (LabApi.Events.Handlers) ===
+ObjectiveEvents.Completing  <ObjectiveCompletingBaseEventArgs>
+ObjectiveEvents.Completed  <ObjectiveCompletedBaseEventArgs>
+ObjectiveEvents.KillingEnemyCompleting  <EnemyKillingObjectiveEventArgs>
+ObjectiveEvents.KilledEnemyCompleted  <EnemyKilledObjectiveEventArgs>
+ObjectiveEvents.EscapingCompleting  <EscapingObjectiveEventArgs>
+ObjectiveEvents.EscapedCompleted  <EscapedObjectiveEventArgs>
+ObjectiveEvents.ActivatingGeneratorCompleting  <GeneratorActivatingObjectiveEventArgs>
+ObjectiveEvents.ActivatedGeneratorCompleted  <GeneratorActivatedObjectiveEventArgs>
+ObjectiveEvents.DamagingScpCompleting  <ScpDamagingObjectiveEventArgs>
+ObjectiveEvents.DamagedScpCompleted  <ScpDamagedObjectiveEventArgs>
+ObjectiveEvents.PickingScpItemCompleting  <ScpItemPickingObjectiveEventArgs>
+ObjectiveEvents.PickedScpItemCompleted  <ScpItemPickedObjectiveEventArgs>
+PlayerEvents.Joined  <PlayerJoinedEventArgs>
+PlayerEvents.Left  <PlayerLeftEventArgs>
+PlayerEvents.ReceivingVoiceMessage  <PlayerReceivingVoiceMessageEventArgs>
+PlayerEvents.SendingVoiceMessage  <PlayerSendingVoiceMessageEventArgs>
+PlayerEvents.PreAuthenticating  <PlayerPreAuthenticatingEventArgs>
+PlayerEvents.PreAuthenticated  <PlayerPreAuthenticatedEventArgs>
+PlayerEvents.UsingIntercom  <PlayerUsingIntercomEventArgs>
+PlayerEvents.UsedIntercom  <PlayerUsedIntercomEventArgs>
+PlayerEvents.Banning  <PlayerBanningEventArgs>
+PlayerEvents.Banned  <PlayerBannedEventArgs>
+PlayerEvents.Kicking  <PlayerKickingEventArgs>
+PlayerEvents.Kicked  <PlayerKickedEventArgs>
+PlayerEvents.Muting  <PlayerMutingEventArgs>
+PlayerEvents.Muted  <PlayerMutedEventArgs>
+PlayerEvents.Unmuting  <PlayerUnmutingEventArgs>
+PlayerEvents.Unmuted  <PlayerUnmutedEventArgs>
+PlayerEvents.ReportingCheater  <PlayerReportingCheaterEventArgs>
+PlayerEvents.ReportedCheater  <PlayerReportedCheaterEventArgs>
+PlayerEvents.ReportingPlayer  <PlayerReportingPlayerEventArgs>
+PlayerEvents.ReportedPlayer  <PlayerReportedPlayerEventArgs>
+PlayerEvents.TogglingNoclip  <PlayerTogglingNoclipEventArgs>
+PlayerEvents.ToggledNoclip  <PlayerToggledNoclipEventArgs>
+PlayerEvents.RequestingRaPlayerList  <PlayerRequestingRaPlayerListEventArgs>
+PlayerEvents.RequestedRaPlayerList  <PlayerRequestedRaPlayerListEventArgs>
+PlayerEvents.RaPlayerListAddingPlayer  <PlayerRaPlayerListAddingPlayerEventArgs>
+PlayerEvents.RaPlayerListAddedPlayer  <PlayerRaPlayerListAddedPlayerEventArgs>
+PlayerEvents.RequestedCustomRaInfo  <PlayerRequestedCustomRaInfoEventArgs>
+PlayerEvents.RequestingRaPlayersInfo  <PlayerRequestingRaPlayersInfoEventArgs>
+PlayerEvents.RequestedRaPlayersInfo  <PlayerRequestedRaPlayersInfoEventArgs>
+PlayerEvents.RequestingRaPlayerInfo  <PlayerRequestingRaPlayerInfoEventArgs>
+PlayerEvents.RequestedRaPlayerInfo  <PlayerRequestedRaPlayerInfoEventArgs>
+PlayerEvents.ChangingBadgeVisibility  <PlayerChangingBadgeVisibilityEventArgs>
+PlayerEvents.ChangedBadgeVisibility  <PlayerChangedBadgeVisibilityEventArgs>
+PlayerEvents.ChangingNickname  <PlayerChangingNicknameEventArgs>
+PlayerEvents.ChangedNickname  <PlayerChangedNicknameEventArgs>
+PlayerEvents.GroupChanging  <PlayerGroupChangingEventArgs>
+PlayerEvents.GroupChanged  <PlayerGroupChangedEventArgs>
+PlayerEvents.UpdatingEffect  <PlayerEffectUpdatingEventArgs>
+PlayerEvents.UpdatedEffect  <PlayerEffectUpdatedEventArgs>
+PlayerEvents.Dying  <PlayerDyingEventArgs>
+PlayerEvents.Death  <PlayerDeathEventArgs>
+PlayerEvents.Hurting  <PlayerHurtingEventArgs>
+PlayerEvents.Hurt  <PlayerHurtEventArgs>
+PlayerEvents.ChangingRole  <PlayerChangingRoleEventArgs>
+PlayerEvents.ChangedRole  <PlayerChangedRoleEventArgs>
+PlayerEvents.Cuffing  <PlayerCuffingEventArgs>
+PlayerEvents.Cuffed  <PlayerCuffedEventArgs>
+PlayerEvents.Uncuffing  <PlayerUncuffingEventArgs>
+PlayerEvents.Uncuffed  <PlayerUncuffedEventArgs>
+PlayerEvents.ReceivingLoadout  <PlayerReceivingLoadoutEventArgs>
+PlayerEvents.ReceivedLoadout  <PlayerReceivedLoadoutEventArgs>
+PlayerEvents.Spawning  <PlayerSpawningEventArgs>
+PlayerEvents.Spawned  <PlayerSpawnedEventArgs>
+PlayerEvents.ChangingItem  <PlayerChangingItemEventArgs>
+PlayerEvents.ChangedItem  <PlayerChangedItemEventArgs>
+PlayerEvents.DroppingAmmo  <PlayerDroppingAmmoEventArgs>
+PlayerEvents.DroppedAmmo  <PlayerDroppedAmmoEventArgs>
+PlayerEvents.DroppingItem  <PlayerDroppingItemEventArgs>
+PlayerEvents.DroppedItem  <PlayerDroppedItemEventArgs>
+PlayerEvents.PickingUpAmmo  <PlayerPickingUpAmmoEventArgs>
+PlayerEvents.PickedUpAmmo  <PlayerPickedUpAmmoEventArgs>
+PlayerEvents.PickingUpArmor  <PlayerPickingUpArmorEventArgs>
+PlayerEvents.PickedUpArmor  <PlayerPickedUpArmorEventArgs>
+PlayerEvents.PickingUpItem  <PlayerPickingUpItemEventArgs>
+PlayerEvents.PickedUpItem  <PlayerPickedUpItemEventArgs>
+PlayerEvents.PickingUpScp330  <PlayerPickingUpScp330EventArgs>
+PlayerEvents.PickedUpScp330  <PlayerPickedUpScp330EventArgs>
+PlayerEvents.SearchedAmmo  <PlayerSearchedAmmoEventArgs>
+PlayerEvents.SearchingArmor  <PlayerSearchingArmorEventArgs>
+PlayerEvents.SearchedArmor  <PlayerSearchedArmorEventArgs>
+PlayerEvents.SearchingPickup  <PlayerSearchingPickupEventArgs>
+PlayerEvents.InteractedToy  <PlayerInteractedToyEventArgs>
+PlayerEvents.SearchedPickup  <PlayerSearchedPickupEventArgs>
+PlayerEvents.SearchingAmmo  <PlayerSearchingAmmoEventArgs>
+PlayerEvents.ThrowingItem  <PlayerThrowingItemEventArgs>
+PlayerEvents.ThrewItem  <PlayerThrewItemEventArgs>
+PlayerEvents.ThrowingProjectile  <PlayerThrowingProjectileEventArgs>
+PlayerEvents.ThrewProjectile  <PlayerThrewProjectileEventArgs>
+PlayerEvents.InspectingKeycard  <PlayerInspectingKeycardEventArgs>
+PlayerEvents.InspectedKeycard  <PlayerInspectedKeycardEventArgs>
+PlayerEvents.SpinningRevolver  <PlayerSpinningRevolverEventArgs>
+PlayerEvents.SpinnedRevolver  <PlayerSpinnedRevolverEventArgs>
+PlayerEvents.ToggledDisruptorFiringMode  <PlayerToggledDisruptorFiringModeEventArgs>
+PlayerEvents.InspectingItem  <PlayerInspectingItemEventArgs>
+PlayerEvents.InspectedItem  <PlayerInspectedItemEventArgs>
+PlayerEvents.UsingItem  <PlayerUsingItemEventArgs>
+PlayerEvents.UsedItem  <PlayerUsedItemEventArgs>
+PlayerEvents.ItemUsageEffectsApplying  <PlayerItemUsageEffectsApplyingEventArgs>
+PlayerEvents.UsingRadio  <PlayerUsingRadioEventArgs>
+PlayerEvents.UsedRadio  <PlayerUsedRadioEventArgs>
+PlayerEvents.AimedWeapon  <PlayerAimedWeaponEventArgs>
+PlayerEvents.DryFiringWeapon  <PlayerDryFiringWeaponEventArgs>
+PlayerEvents.DryFiredWeapon  <PlayerDryFiredWeaponEventArgs>
+PlayerEvents.UnloadingWeapon  <PlayerUnloadingWeaponEventArgs>
+PlayerEvents.UnloadedWeapon  <PlayerUnloadedWeaponEventArgs>
+PlayerEvents.ReloadingWeapon  <PlayerReloadingWeaponEventArgs>
+PlayerEvents.ReloadedWeapon  <PlayerReloadedWeaponEventArgs>
+PlayerEvents.ShootingWeapon  <PlayerShootingWeaponEventArgs>
+PlayerEvents.ShotWeapon  <PlayerShotWeaponEventArgs>
+PlayerEvents.ChangingAttachments  <PlayerChangingAttachmentsEventArgs>
+PlayerEvents.ChangedAttachments  <PlayerChangedAttachmentsEventArgs>
+PlayerEvents.SendingAttachmentsPrefs  <PlayerSendingAttachmentsPrefsEventArgs>
+PlayerEvents.SentAttachmentsPrefs  <PlayerSentAttachmentsPrefsEventArgs>
+PlayerEvents.CancellingUsingItem  <PlayerCancellingUsingItemEventArgs>
+PlayerEvents.CancelledUsingItem  <PlayerCancelledUsingItemEventArgs>
+PlayerEvents.ChangingRadioRange  <PlayerChangingRadioRangeEventArgs>
+PlayerEvents.ChangedRadioRange  <PlayerChangedRadioRangeEventArgs>
+PlayerEvents.ProcessingJailbirdMessage  <PlayerProcessingJailbirdMessageEventArgs>
+PlayerEvents.ProcessedJailbirdMessage  <PlayerProcessedJailbirdMessageEventArgs>
+PlayerEvents.TogglingFlashlight  <PlayerTogglingFlashlightEventArgs>
+PlayerEvents.ToggledFlashlight  <PlayerToggledFlashlightEventArgs>
+PlayerEvents.TogglingWeaponFlashlight  <PlayerTogglingWeaponFlashlightEventArgs>
+PlayerEvents.ToggledWeaponFlashlight  <PlayerToggledWeaponFlashlightEventArgs>
+PlayerEvents.TogglingRadio  <PlayerTogglingRadioEventArgs>
+PlayerEvents.ToggledRadio  <PlayerToggledRadioEventArgs>
+PlayerEvents.Jumped  <PlayerJumpedEventArgs>
+PlayerEvents.MovementStateChanged  <PlayerMovementStateChangedEventArgs>
+PlayerEvents.ProcessingScp1509Message  <PlayerProcessingScp1509MessageEventArgs>
+PlayerEvents.ProcessedScp1509Message  <PlayerProcessedScp1509MessageEventArgs>
+PlayerEvents.Scp1509Resurrecting  <PlayerScp1509ResurrectingEventArgs>
+PlayerEvents.Scp1509Resurrected  <PlayerScp1509ResurrectedEventArgs>
+PlayerEvents.DamagingShootingTarget  <PlayerDamagingShootingTargetEventArgs>
+PlayerEvents.DamagedShootingTarget  <PlayerDamagedShootingTargetEventArgs>
+PlayerEvents.DamagingWindow  <PlayerDamagingWindowEventArgs>
+PlayerEvents.DamagedWindow  <PlayerDamagedWindowEventArgs>
+PlayerEvents.EnteringPocketDimension  <PlayerEnteringPocketDimensionEventArgs>
+PlayerEvents.EnteredPocketDimension  <PlayerEnteredPocketDimensionEventArgs>
+PlayerEvents.LeavingPocketDimension  <PlayerLeavingPocketDimensionEventArgs>
+PlayerEvents.LeftPocketDimension  <PlayerLeftPocketDimensionEventArgs>
+PlayerEvents.TriggeringTesla  <PlayerTriggeringTeslaEventArgs>
+PlayerEvents.TriggeredTesla  <PlayerTriggeredTeslaEventArgs>
+PlayerEvents.Escaping  <PlayerEscapingEventArgs>
+PlayerEvents.Escaped  <PlayerEscapedEventArgs>
+PlayerEvents.FlippingCoin  <PlayerFlippingCoinEventArgs>
+PlayerEvents.FlippedCoin  <PlayerFlippedCoinEventArgs>
+PlayerEvents.SearchingToy  <PlayerSearchingToyEventArgs>
+PlayerEvents.SearchedToy  <PlayerSearchedToyEventArgs>
+PlayerEvents.SearchToyAborted  <PlayerSearchToyAbortedEventArgs>
+PlayerEvents.IdlingTesla  <PlayerIdlingTeslaEventArgs>
+PlayerEvents.IdledTesla  <PlayerIdledTeslaEventArgs>
+PlayerEvents.InteractingDoor  <PlayerInteractingDoorEventArgs>
+PlayerEvents.InteractedDoor  <PlayerInteractedDoorEventArgs>
+PlayerEvents.InteractingElevator  <PlayerInteractingElevatorEventArgs>
+PlayerEvents.InteractedElevator  <PlayerInteractedElevatorEventArgs>
+PlayerEvents.InteractingGenerator  <PlayerInteractingGeneratorEventArgs>
+PlayerEvents.InteractedGenerator  <PlayerInteractedGeneratorEventArgs>
+PlayerEvents.OpeningGenerator  <PlayerOpeningGeneratorEventArgs>
+PlayerEvents.OpenedGenerator  <PlayerOpenedGeneratorEventArgs>
+PlayerEvents.ActivatingGenerator  <PlayerActivatingGeneratorEventArgs>
+PlayerEvents.ActivatedGenerator  <PlayerActivatedGeneratorEventArgs>
+PlayerEvents.DeactivatingGenerator  <PlayerDeactivatingGeneratorEventArgs>
+PlayerEvents.DeactivatedGenerator  <PlayerDeactivatedGeneratorEventArgs>
+PlayerEvents.UnlockingGenerator  <PlayerUnlockingGeneratorEventArgs>
+PlayerEvents.UnlockedGenerator  <PlayerUnlockedGeneratorEventArgs>
+PlayerEvents.ClosingGenerator  <PlayerClosingGeneratorEventArgs>
+PlayerEvents.ClosedGenerator  <PlayerClosedGeneratorEventArgs>
+PlayerEvents.InteractingLocker  <PlayerInteractingLockerEventArgs>
+PlayerEvents.InteractedLocker  <PlayerInteractedLockerEventArgs>
+PlayerEvents.InteractingScp330  <PlayerInteractingScp330EventArgs>
+PlayerEvents.InteractedScp330  <PlayerInteractedScp330EventArgs>
+PlayerEvents.InteractingShootingTarget  <PlayerInteractingShootingTargetEventArgs>
+PlayerEvents.InteractedShootingTarget  <PlayerInteractedShootingTargetEventArgs>
+PlayerEvents.PlacingBlood  <PlayerPlacingBloodEventArgs>
+PlayerEvents.PlacedBlood  <PlayerPlacedBloodEventArgs>
+PlayerEvents.PlacingBulletHole  <PlayerPlacingBulletHoleEventArgs>
+PlayerEvents.PlacedBulletHole  <PlayerPlacedBulletHoleEventArgs>
+PlayerEvents.SpawningRagdoll  <PlayerSpawningRagdollEventArgs>
+PlayerEvents.SpawnedRagdoll  <PlayerSpawnedRagdollEventArgs>
+PlayerEvents.UnlockingWarheadButton  <PlayerUnlockingWarheadButtonEventArgs>
+PlayerEvents.UnlockedWarheadButton  <PlayerUnlockedWarheadButtonEventArgs>
+PlayerEvents.ReceivedAchievement  <PlayerReceivedAchievementEventArgs>
+PlayerEvents.RoomChanged  <PlayerRoomChangedEventArgs>
+PlayerEvents.ZoneChanged  <PlayerZoneChangedEventArgs>
+PlayerEvents.InteractingWarheadLever  <PlayerInteractingWarheadLeverEventArgs>
+PlayerEvents.InteractedWarheadLever  <PlayerInteractedWarheadLeverEventArgs>
+PlayerEvents.SendingHitmarker  <PlayerSendingHitmarkerEventArgs>
+PlayerEvents.SentHitmarker  <PlayerSentHitmarkerEventArgs>
+PlayerEvents.CheckedHitmarker  <PlayerCheckedHitmarkerEventArgs>
+PlayerEvents.ChangedSpectator  <PlayerChangedSpectatorEventArgs>
+PlayerEvents.EnteringHazard  <PlayerEnteringHazardEventArgs>
+PlayerEvents.EnteredHazard  <PlayerEnteredHazardEventArgs>
+PlayerEvents.StayingInHazard  <PlayersStayingInHazardEventArgs>
+PlayerEvents.LeavingHazard  <PlayerLeavingHazardEventArgs>
+PlayerEvents.LeftHazard  <PlayerLeftHazardEventArgs>
+PlayerEvents.ValidatedVisibility  <PlayerValidatedVisibilityEventArgs>
+PlayerEvents.DetectedByScp1344  <PlayerDetectedByScp1344EventArgs>
+Scp0492Events.StartingConsumingCorpse  <Scp0492StartingConsumingCorpseEventArgs>
+Scp0492Events.StartedConsumingCorpse  <Scp0492StartedConsumingCorpseEventArgs>
+Scp0492Events.ConsumingCorpse  <Scp0492ConsumingCorpseEventArgs>
+Scp0492Events.ConsumedCorpse  <Scp0492ConsumedCorpseEventArgs>
+Scp049Events.StartingResurrection  <Scp049StartingResurrectionEventArgs>
+Scp049Events.ResurrectingBody  <Scp049ResurrectingBodyEventArgs>
+Scp049Events.ResurrectedBody  <Scp049ResurrectedBodyEventArgs>
+Scp049Events.UsingDoctorsCall  <Scp049UsingDoctorsCallEventArgs>
+Scp049Events.UsedDoctorsCall  <Scp049UsedDoctorsCallEventArgs>
+Scp049Events.UsingSense  <Scp049UsingSenseEventArgs>
+Scp049Events.UsedSense  <Scp049UsedSenseEventArgs>
+Scp049Events.Attacking  <Scp049AttackingEventArgs>
+Scp049Events.Attacked  <Scp049AttackedEventArgs>
+Scp049Events.SenseLostTarget  <Scp049SenseLostTargetEventArgs>
+Scp049Events.SenseKilledTarget  <Scp049SenseKilledTargetEventArgs>
+Scp079Events.BlackingOutRoom  <Scp079BlackingOutRoomEventsArgs>
+Scp079Events.BlackedOutRoom  <Scp079BlackedOutRoomEventArgs>
+Scp079Events.BlackingOutZone  <Scp079BlackingOutZoneEventArgs>
+Scp079Events.BlackedOutZone  <Scp079BlackedOutZoneEventArgs>
+Scp079Events.ChangingCamera  <Scp079ChangingCameraEventArgs>
+Scp079Events.ChangedCamera  <Scp079ChangedCameraEventArgs>
+Scp079Events.CancellingRoomLockdown  <Scp079CancellingRoomLockdownEventArgs>
+Scp079Events.CancelledRoomLockdown  <Scp079CancelledRoomLockdownEventArgs>
+Scp079Events.GainingExperience  <Scp079GainingExperienceEventArgs>
+Scp079Events.GainedExperience  <Scp079GainedExperienceEventArgs>
+Scp079Events.LevelingUp  <Scp079LevelingUpEventArgs>
+Scp079Events.LeveledUp  <Scp079LeveledUpEventArgs>
+Scp079Events.LockingDoor  <Scp079LockingDoorEventArgs>
+Scp079Events.LockedDoor  <Scp079LockedDoorEventArgs>
+Scp079Events.LockingDownRoom  <Scp079LockingDownRoomEventArgs>
+Scp079Events.LockedDownRoom  <Scp079LockedDownRoomEventArgs>
+Scp079Events.Recontaining  <Scp079RecontainingEventArgs>
+Scp079Events.Recontained  <Scp079RecontainedEventArgs>
+Scp079Events.UnlockingDoor  <Scp079UnlockingDoorEventArgs>
+Scp079Events.UnlockedDoor  <Scp079UnlockedDoorEventArgs>
+Scp079Events.UsingTesla  <Scp079UsingTeslaEventArgs>
+Scp079Events.UsedTesla  <Scp079UsedTeslaEventArgs>
+Scp079Events.Pinging  <Scp079PingingEventArgs>
+Scp079Events.Pinged  <Scp079PingedEventArgs>
+Scp096Events.AddingTarget  <Scp096AddingTargetEventArgs>
+Scp096Events.AddedTarget  <Scp096AddedTargetEventArgs>
+Scp096Events.ChangingState  <Scp096ChangingStateEventArgs>
+Scp096Events.ChangedState  <Scp096ChangedStateEventArgs>
+Scp096Events.Charging  <Scp096ChargingEventArgs>
+Scp096Events.Charged  <Scp096ChargedEventArgs>
+Scp096Events.Enraging  <Scp096EnragingEventArgs>
+Scp096Events.Enraged  <Scp096EnragedEventArgs>
+Scp096Events.PryingGate  <Scp096PryingGateEventArgs>
+Scp096Events.PriedGate  <Scp096PriedGateEventArgs>
+Scp096Events.StartCrying  <Scp096StartCryingEventArgs>
+Scp096Events.StartedCrying  <Scp096StartedCryingEventArgs>
+Scp096Events.TryingNotToCry  <Scp096TryingNotToCryEventArgs>
+Scp096Events.TriedNotToCry  <Scp096TriedNotToCryEventArgs>
+Scp106Events.ChangingStalkMode  <Scp106ChangingStalkModeEventArgs>
+Scp106Events.ChangedStalkMode  <Scp106ChangedStalkModeEventArgs>
+Scp106Events.ChangingVigor  <Scp106ChangingVigorEventArgs>
+Scp106Events.ChangedVigor  <Scp106ChangedVigorEventArgs>
+Scp106Events.UsedHunterAtlas  <Scp106UsedHunterAtlasEventArgs>
+Scp106Events.UsingHunterAtlas  <Scp106UsingHunterAtlasEventArgs>
+Scp106Events.ChangingSubmersionStatus  <Scp106ChangingSubmersionStatusEventArgs>
+Scp106Events.ChangedSubmersionStatus  <Scp106ChangedSubmersionStatusEventArgs>
+Scp106Events.TeleportingPlayer  <Scp106TeleportingPlayerEvent>
+Scp106Events.TeleportedPlayer  <Scp106TeleportedPlayerEvent>
+Scp127Events.GainingExperience  <Scp127GainingExperienceEventArgs>
+Scp127Events.GainExperience  <Scp127GainExperienceEventArgs>
+Scp127Events.LevellingUp  <Scp127LevellingUpEventArgs>
+Scp127Events.LevelUp  <Scp127LevelUpEventArgs>
+Scp127Events.Talking  <Scp127TalkingEventArgs>
+Scp127Events.Talked  <Scp127TalkedEventArgs>
+Scp173Events.BreakneckSpeedChanging  <Scp173BreakneckSpeedChangingEventArgs>
+Scp173Events.BreakneckSpeedChanged  <Scp173BreakneckSpeedChangedEventArgs>
+Scp173Events.AddingObserver  <Scp173AddingObserverEventArgs>
+Scp173Events.AddedObserver  <Scp173AddedObserverEventArgs>
+Scp173Events.RemovingObserver  <Scp173RemovingObserverEventArgs>
+Scp173Events.RemovedObserver  <Scp173RemovedObserverEventArgs>
+Scp173Events.CreatingTantrum  <Scp173CreatingTantrumEventArgs>
+Scp173Events.CreatedTantrum  <Scp173CreatedTantrumEventArgs>
+Scp173Events.PlayingSound  <Scp173PlayingSoundEventArgs>
+Scp173Events.PlayedSound  <Scp173PlayedSoundEventArgs>
+Scp173Events.Teleporting  <Scp173TeleportingEventArgs>
+Scp173Events.Teleported  <Scp173TeleportedEventArgs>
+Scp173Events.Snapping  <Scp173SnappingEventArgs>
+Scp173Events.Snapped  <Scp173SnappedEventArgs>
+Scp3114Events.Disguising  <Scp3114DisguisingEventArgs>
+Scp3114Events.Disguised  <Scp3114DisguisedEventArgs>
+Scp3114Events.Revealing  <Scp3114RevealingEventArgs>
+Scp3114Events.Revealed  <Scp3114RevealedEventArgs>
+Scp3114Events.StrangleStarting  <Scp3114StrangleStartingEventArgs>
+Scp3114Events.StrangleStarted  <Scp3114StrangleStartedEventArgs>
+Scp3114Events.StrangleAborting  <Scp3114StrangleAbortingEventArgs>
+Scp3114Events.Dance  <Scp3114StartedDanceEventArgs>
+Scp3114Events.StartDancing  <Scp3114StartingDanceEventArgs>
+Scp3114Events.StrangleAborted  <Scp3114StrangleAbortedEventArgs>
+Scp914Events.Activating  <Scp914ActivatingEventArgs>
+Scp914Events.Activated  <Scp914ActivatedEventArgs>
+Scp914Events.KnobChanging  <Scp914KnobChangingEventArgs>
+Scp914Events.KnobChanged  <Scp914KnobChangedEventArgs>
+Scp914Events.ProcessingPickup  <Scp914ProcessingPickupEventArgs>
+Scp914Events.ProcessedPickup  <Scp914ProcessedPickupEventArgs>
+Scp914Events.ProcessingPlayer  <Scp914ProcessingPlayerEventArgs>
+Scp914Events.ProcessedPlayer  <Scp914ProcessedPlayerEventArgs>
+Scp914Events.ProcessingInventoryItem  <Scp914ProcessingInventoryItemEventArgs>
+Scp914Events.ProcessedInventoryItem  <Scp914ProcessedInventoryItemEventArgs>
+Scp939Events.Attacking  <Scp939AttackingEventArgs>
+Scp939Events.Attacked  <Scp939AttackedEventArgs>
+Scp939Events.CreatingAmnesticCloud  <Scp939CreatingAmnesticCloudEventArgs>
+Scp939Events.CreatedAmnesticCloud  <Scp939CreatedAmnesticCloudEventArgs>
+Scp939Events.Lunging  <Scp939LungingEventArgs>
+Scp939Events.Lunged  <Scp939LungedEventArgs>
+Scp939Events.Focused  <Scp939FocusedEventArgs>
+Scp939Events.MimickingEnvironment  <Scp939MimickingEnvironmentEventArgs>
+Scp939Events.MimickedEnvironment  <Scp939MimickedEnvironmentEventArgs>
+ScpEvents.HumeShieldBroken  <ScpHumeShieldBrokenEventArgs>
+ServerEvents.WaitingForPlayers  <>
+ServerEvents.RoundRestarted  <>
+ServerEvents.Shutdown  <>
+ServerEvents.DeadmanSequenceActivated  <>
+ServerEvents.DeadmanSequenceActivating  <DeadmanSequenceActivatingEventArgs>
+ServerEvents.RoundEndingConditionsCheck  <RoundEndingConditionsCheckEventArgs>
+ServerEvents.RoundEnding  <RoundEndingEventArgs>
+ServerEvents.RoundEnded  <RoundEndedEventArgs>
+ServerEvents.RoundStarting  <RoundStartingEventArgs>
+ServerEvents.RoundStarted  <>
+ServerEvents.BanIssuing  <BanIssuingEventArgs>
+ServerEvents.BanIssued  <BanIssuedEventArgs>
+ServerEvents.BanRevoking  <BanRevokingEventArgs>
+ServerEvents.BanRevoked  <BanRevokedEventArgs>
+ServerEvents.BanUpdating  <BanUpdatingEventArgs>
+ServerEvents.BanUpdated  <BanUpdatedEventArgs>
+ServerEvents.CommandExecuting  <CommandExecutingEventArgs>
+ServerEvents.CommandExecuted  <CommandExecutedEventArgs>
+ServerEvents.CassieQueuingScpTermination  <CassieQueuingScpTerminationEventArgs>
+ServerEvents.CassieQueuedScpTermination  <CassieQueuedScpTerminationEventArgs>
+ServerEvents.WaveRespawning  <WaveRespawningEventArgs>
+ServerEvents.WaveRespawned  <WaveRespawnedEventArgs>
+ServerEvents.WaveTeamSelecting  <WaveTeamSelectingEventArgs>
+ServerEvents.WaveTeamSelected  <WaveTeamSelectedEventArgs>
+ServerEvents.LczDecontaminationAnnounced  <LczDecontaminationAnnouncedEventArgs>
+ServerEvents.LczDecontaminationStarting  <LczDecontaminationStartingEventArgs>
+ServerEvents.LczDecontaminationStarted  <>
+ServerEvents.MapGenerating  <MapGeneratingEventArgs>
+ServerEvents.MapGenerated  <MapGeneratedEventArgs>
+ServerEvents.PickupCreated  <PickupCreatedEventArgs>
+ServerEvents.PickupDestroyed  <PickupDestroyedEventArgs>
+ServerEvents.SendingAdminChat  <SendingAdminChatEventArgs>
+ServerEvents.SentAdminChat  <SentAdminChatEventArgs>
+ServerEvents.ItemSpawning  <ItemSpawningEventArgs>
+ServerEvents.ItemSpawned  <ItemSpawnedEventArgs>
+ServerEvents.CassieAnnouncing  <CassieAnnouncingEventArgs>
+ServerEvents.CassieAnnounced  <CassieAnnouncedEventArgs>
+ServerEvents.ProjectileExploding  <ProjectileExplodingEventArgs>
+ServerEvents.ProjectileExploded  <ProjectileExplodedEventArgs>
+ServerEvents.ExplosionSpawning  <ExplosionSpawningEventArgs>
+ServerEvents.ExplosionSpawned  <ExplosionSpawnedEventArgs>
+ServerEvents.GeneratorActivating  <GeneratorActivatingEventArgs>
+ServerEvents.GeneratorActivated  <GeneratorActivatedEventArgs>
+ServerEvents.ElevatorSequenceChanged  <ElevatorSequenceChangedEventArgs>
+ServerEvents.ModifyingFactionInfluence  <ModifyingFactionInfluenceEventArgs>
+ServerEvents.ModifiedFactionInfluence  <ModifiedFactionInfluenceEventArgs>
+ServerEvents.AchievingMilestone  <AchievingMilestoneEventArgs>
+ServerEvents.AchievedMilestone  <AchievedMilestoneEventArgs>
+ServerEvents.BlastDoorChanging  <BlastDoorChangingEventArgs>
+ServerEvents.BlastDoorChanged  <BlastDoorChangedEventArgs>
+ServerEvents.RoomLightChanged  <RoomLightChangedEventArgs>
+ServerEvents.RoomColorChanged  <RoomColorChangedEventArgs>
+ServerEvents.DoorLockChanged  <DoorLockChangedEventArgs>
+ServerEvents.DoorRepairing  <DoorRepairingEventArgs>
+ServerEvents.DoorRepaired  <DoorRepairedEventArgs>
+ServerEvents.DoorDamaging  <DoorDamagingEventArgs>
+ServerEvents.DoorDamaged  <DoorDamagedEventArgs>
+ServerEvents.CheckpointDoorSequenceChanging  <CheckpointDoorSequenceChangingEventArgs>
+ServerEvents.CheckpointDoorSequenceChanged  <CheckpointDoorSequenceChangedEventArgs>
+ServerEvents.PluginsEnabled  <>
+WarheadEvents.Starting  <WarheadStartingEventArgs>
+WarheadEvents.Started  <WarheadStartedEventArgs>
+WarheadEvents.Stopping  <WarheadStoppingEventArgs>
+WarheadEvents.Stopped  <WarheadStoppedEventArgs>
+WarheadEvents.Detonating  <WarheadDetonatingEventArgs>
+WarheadEvents.Detonated  <WarheadDetonatedEventArgs>
+
+=== Player WRAPPER MEMBERS ===
+-- properties --
+  IEnumerable`1 ActiveEffects
+  Dictionary`2 Ammo
+  Single ArtificialHealth
+  Room CachedRoom
+  Transform Camera
+  NetworkConnection Connection
+  static Int32 ConnectionsCount
+  NetworkConnectionToClient ConnectionToClient
+  static Int32 Count
+  Item CurrentItem
+  Player CurrentlySpectating
+  List`1 CurrentSpectators
+  String CustomInfo
+  static Dictionary`2 Dictionary
+  Player DisarmedBy
+  String DisplayName
+  Boolean DoNotTrack
+  static IEnumerable`1 DummyList
+  EmotionPresetType Emotion
+  Faction Faction
+  GameObject GameObject
+  Vector3 Gravity
+  String GroupColor
+  String GroupName
+  Boolean HasReservedSlot
+  Single Health
+  static Player Host
+  Single HumeShield
+  Single HumeShieldRegenCooldown
+  Single HumeShieldRegenRate
+  PlayerInfoArea InfoArea
+  Inventory Inventory
+  String IpAddress
+  Boolean IsAlive
+  Boolean IsBypassEnabled
+  Boolean IsChaos
+  Boolean IsDestroyed
+  Boolean IsDisarmed
+  Boolean IsDummy
+  Boolean IsGlobalModerator
+  Boolean IsGodModeEnabled
+  Boolean IsHost
+  Boolean IsHuman
+  Boolean IsIntercomMuted
+  Boolean IsInventoryFull
+  Boolean IsMuted
+  Boolean IsNoclipEnabled
+  Boolean IsNorthwoodStaff
+  Boolean IsNpc
+  Boolean IsNTF
+  Boolean IsOffline
+  Boolean IsOnline
+  Boolean IsOutOfAmmo
+  Boolean IsOverwatchEnabled
+  Boolean IsPlayer
+  Boolean IsReady
+  Boolean IsSCP
+  Boolean IsServer
+  Boolean IsSpeaking
+  Boolean IsSpectatable
+  Boolean IsTutorial
+  Boolean IsUsingRadio
+  Boolean IsWithoutItems
+  IEnumerable`1 Items
+  Int32 LifeId
+  static IReadOnlyCollection`1 List
+  String LogName
+  Vector2 LookRotation
+  Single MaxArtificialHealth
+  Single MaxHealth
+  Single MaxHumeShield
+  UInt32 NetworkId
+  String Nickname
+  static Int32 NonVerifiedCount
+  static IEnumerable`1 NpcList
+  String PermissionsGroupName
+  Int32 PlayerId
+  Vector3 Position
+  static IEnumerable`1 ReadyList
+  ReferenceHub ReferenceHub
+  static IEnumerable`1 RegularNpcList
+  Boolean RemoteAdminAccess
+  RoleTypeId Role
+  PlayerRoleBase RoleBase
+  Room Room
+  Quaternion Rotation
+  Vector3 Scale
+  Single StaminaRemaining
+  Team Team
+  static IEnumerable`1 UnauthenticatedList
+  Int32 UnitId
+  UserGroup UserGroup
+  String UserId
+  Vector3 Velocity
+  VoiceChatChannel VoiceChannel
+  VoiceModuleBase VoiceModule
+  FacilityZone Zone
+-- methods --
+  Void AddAmmo(ItemType item, UInt16 amount)
+  Item AddItem(ItemType item, ItemAddReason reason)
+  Item AddItem(Pickup pickup)
+  Void AddRegeneration(Single rate, Single duration)
+  Boolean Ban(Player issuer, String reason, Int64 duration)
+  Boolean Ban(String reason, Int64 duration)
+  Void ClearAmmo()
+  Void ClearBroadcasts()
+  Void ClearInventory(Boolean clearAmmo, Boolean clearItems)
+  Void ClearItems()
+  AhpProcess CreateAhpProcess(Single amount, Single limit, Single decay, Single efficacy, Single sustain, Boolean persistent)
+  Boolean Damage(Single amount, String reason, String cassieAnnouncement)
+  Boolean Damage(Single amount, Player attacker, Vector3 force, Int32 armorPenetration)
+  Boolean Damage(DamageHandlerBase damageHandlerBase)
+  Void DisableAllEffects()
+  Void DisableEffect()
+  Void DisableEffect(StatusEffectBase effect)
+  Void Disconnect(String reason)
+  List`1 DropAllAmmo()
+  List`1 DropAllItems()
+  IEnumerable`1 DropAmmo(ItemType item, UInt16 amount, Boolean checkMinimals)
+  Void DropEverything()
+  Pickup DropItem(Item item)
+  Pickup DropItem(ItemBase item)
+  Pickup DropItem(UInt16 serial)
+  Void EnableEffect(Byte intensity, Single duration, Boolean addDuration)
+  Void EnableEffect(StatusEffectBase effect, Byte intensity, Single duration, Boolean addDuration)
+  Boolean Equals(Object obj)
+  static Player Get(ReferenceHub referenceHub)
+  static List`1 Get(IEnumerable`1 referenceHubs)
+  static Player Get(GameObject gameObject)
+  static Player Get(NetworkIdentity identity)
+  static Player Get(UInt32 netId)
+  static Player Get(ICommandSender sender)
+  static Player Get(String userId)
+  static Player Get(Int32 playerId)
+  static IEnumerable`1 GetAll(PlayerSearchFlags flags)
+  UInt16 GetAmmo(ItemType item)
+  static Player GetByDisplayName(String input, Boolean requireFullMatch)
+  static Player GetByName(String input, Boolean requireFullMatch, Func`2 propertySelector)
+  static Player GetByNickname(String input, Boolean requireFullMatch)
+  TStore GetDataStore()
+  T GetEffect()
+  Int32 GetHashCode()
+  static List`1 GetNonAlloc(IEnumerable`1 referenceHubs, List`1 list)
+  RoleTypeId GetRoleVisibilityFor(Player otherPlayer)
+  T GetStatModule()
+  Type GetType()
+  Void GiveCandy(CandyKindID candy, ItemAddReason reason)
+  Void GiveRandomCandy(ItemAddReason reason)
+  Boolean HasEffect()
+  Boolean HasPermission(PlayerPermissions permission)
+  Void Heal(Single amount)
+  Void IntercomMute(Boolean isTemporary)
+  Void IntercomUnmute(Boolean revokeMute)
+  Void Jump(Single jumpStrength)
+  Void Jump()
+  Boolean Kick(Player issuer, String reason)
+  Boolean Kick(String reason)
+  Void Kill()
+  Boolean Kill(String reason, String cassieAnnouncement)
+  Void Move(Vector3 delta)
+  Void Mute(Boolean isTemporary)
+  Void Reconnect(Single delay, Boolean isFastRestart)
+  Void RedirectToServer(UInt16 port)
+  Void RemoveItem(Item item)
+  Void RemoveItem(ItemBase item)
+  Void RemoveItem(Pickup pickup)
+  Void RemoveItem(ItemPickupBase pickup)
+  Void RemoveItem(ItemType item, Int32 maxAmount)
+  Void Rotate(Vector2 delta)
+  Void SendBroadcast(String message, UInt16 duration, BroadcastFlags type, Boolean shouldClearPrevious)
+  Void SendConsoleMessage(String message, String color)
+  Void SendHint(String text, Single duration)
+  Void SendHint(String text, HintEffect[] effects, Single duration)
+  Void SendHint(String text, HintParameter[] parameters, HintEffect[] effects, Single duration)
+  Void SendHitMarker(Single size)
+  Void ServerKillProcess(AhpProcess process)
+  Void SetAmmo(ItemType item, UInt16 amount)
+  Void SetRole(RoleTypeId newRole, RoleChangeReason reason, RoleSpawnFlags flags)
+  String ToString()
+  static Boolean TryGet(GameObject gameObject, Player& player)
+  static Boolean TryGet(NetworkIdentity identity, Player& player)
+  static Boolean TryGet(UInt32 netId, Player& player)
+  static Boolean TryGet(ICommandSender sender, Player& player)
+  static Boolean TryGet(String userId, Player& player)
+  static Boolean TryGet(Int32 playerId, Player& player)
+  Boolean TryGetEffect(T& effect)
+  Boolean TryGetEffect(String effectName, StatusEffectBase& effect)
+  static Boolean TryGetPlayersByName(String input, List`1& players)
+  Void Unmute(Boolean revokeMute)
+  static Boolean ValidateCustomInfo(String text, String& rejectionReason)

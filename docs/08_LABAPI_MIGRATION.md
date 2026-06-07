@@ -89,13 +89,33 @@ plugin/
 - [x] Атрибуты (`src/Attributes.cs`) — **компилируются**
 - [x] Build-харнесс `scripts/build-shim.ps1` (csc против dependencies/) — **Qurre.dll собирается** ✅
 - [x] Окружение развёрнуто: сервер + LabApi 1.1.7 + 147 DLL (см. `09_BUILD_ENV_STATUS.md`)
-- [ ] Диспетчер событий `EventDispatcher` (следующий шаг — против LabApi.Events.Handlers)
+- [x] **Полная карта API LabApi** извлечена (события + Player + обёртки) → `docs/labapi_1.1.7_api_reference.txt`
+- [x] Спецификация под-объектов Player (UserInformation/RoleInformation/… с точными членами)
+- [x] `Log` → LabApi.Features.Console.Logger — **компилируется**
+- [x] `Server` → LabApi.Features.Wrappers.Server — **компилируется**
+- [x] `World.Round` → LabApi.Features.Wrappers.Round — **компилируется**
+- [x] `Player` (ядро: Base/Get/List/ReferenceHub) — **компилируется** против реального LabApi
+- [ ] `Player` под-объекты (UserInformation, RoleInformation, Inventory, Health, Tag, Client, MovementState, GamePlay, Effects, Variables)
+- [ ] `Map` + обёртки `Room`/`Door` (нужны List<T> + extension TryFind)
+- [ ] Диспетчер событий `EventDispatcher` (карта событий готова — см. reference)
 - [ ] Event-структуры (~70, по приоритету частоты)
-- [ ] Обёртка `Player` (самая используемая — 146× UserInformation и т.д.)
-- [ ] Обёртки `Map`/`Round`/`Server`/`Log`
-- [ ] Контроллеры `Door`/`Room`/`Lift`/`Tesla`/`Cassie`
-- [ ] Аудио-аддон (`Qurre.API.Addons.Audio`) — отдельная задача
+- [ ] Контроллеры `Cassie`/`Lift`/`Tesla`/`Generator`
+- [ ] Аудио-аддон (`Qurre.API.Addons.Audio`)
 - [ ] Публичайзер Assembly-CSharp/Mirror (для прямых патчей плагина)
 - [ ] Первая успешная компиляция плагина против shim'а
+
+### Карта `Player` под-объект → LabApi (готова к реализации)
+| Qurre | → LabApi.Player |
+|---|---|
+| `UserInformation.{UserId,Nickname,CustomInfo,Id,Ip,DisplayName,DoNotTrack,NetId}` | `{UserId,Nickname,CustomInfo,PlayerId,IpAddress,DisplayName,DoNotTrack,NetworkId}` |
+| `RoleInformation.{Role,Team,Faction,IsAlive,IsScp,IsHuman}` + `SetNew(role,reason)` | `{Role,Team,Faction,IsAlive,IsSCP,IsHuman}` + `SetRole(...)` |
+| `HealthInformation.{Hp,MaxHp,Stamina,Ahp,MaxAhp}` + `Kill()` | `{Health,MaxHealth,StaminaRemaining,ArtificialHealth,MaxArtificialHealth}` + `Kill()` |
+| `Inventory.{Clear(),AddItem(ItemType),Base,Ammo}` | `ClearInventory()/AddItem()/Inventory/Ammo` |
+| `Client.{Broadcast,SendConsole,ShowHint,Reconnect}` | `SendBroadcast/SendConsoleMessage/SendHint/Reconnect` |
+| `MovementState.{Position,Scale,Rotation}` | `{Position,Scale,Rotation}` |
+| `GamePlay.{Room,Overwatch,CurrentZone,GodMode,Cuffed,Cuffer}` | `{Room,IsOverwatchEnabled,Zone,IsGodModeEnabled,IsDisarmed,DisarmedBy}` |
+| `Effects.{Enable,TryGet,DisableAll}` | `EnableEffect/TryGetEffect/DisableAllEffects` |
+| `Variables.{TryGetAndParse,ContainsKey,Remove}` | **shim-store** (Dictionary на игрока, Qurre-фича) |
+| `Tag` (string, Contains/Replace) | RA badge text (ReferenceHub.serverRoles) |
 ```
 ```
