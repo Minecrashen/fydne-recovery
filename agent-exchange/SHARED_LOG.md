@@ -76,6 +76,42 @@ plugin/QurreShim  — shim Qurre→LabAPI (компилируется)
 
 ## 📝 LOG ENTRIES
 
+### 2026-06-08 (3) 🤝 HANDOFF → следующему агенту (напр. Codex/GPT-5-codex)
+
+**Status**: IN_PROGRESS — плагин компилируется до **12 ошибок** (с 887). Подхвати отсюда.
+**Related To**: финиш миграции Qurre→LabAPI (shim)
+
+Контекст этой сессии не наследуется — всё нужное здесь и в репо. Стартуй так:
+
+1. Прочитай: `AGENT_PROTOCOL.md`, эту запись, `TODO.md` (P0), `docs/08`/`docs/09`.
+2. Окружение (сервер SCP:SL, LabApi, компилятор, публичайзер, .NET SDK) уже развёрнуто —
+   пути и состояние в `docs/09_BUILD_ENV_STATUS.md`. Зависимости — в `dependencies/` (gitignored;
+   если их нет — пересобери по `scripts/gather-dependencies.ps1` + `docs/03`).
+3. Цикл: `scripts/build-shim.ps1` → `scripts/build-plugin.ps1 -Census`. Цель: 0 ошибок → `Loli.dll`.
+
+**Оставшиеся 12 ошибок = Harmony-патчи на v14-методы игры** (полный список — `TODO.md` P0).
+
+**ПЕРВЫЙ ШАГ (путь A — публичайзинг):** гипотеза — ссылка на `Assembly-CSharp_public.dll` ломает
+резолв из-за identity-коллизии с обычной `Assembly-CSharp.dll` в той же папке `dependencies/`.
+Тест: убрать/переименовать обычную `Assembly-CSharp.dll` из `dependencies/` так, чтобы осталась
+ТОЛЬКО `_public`, прогнать census. Если гипотеза верна — CS0122 и приватные CS0117 уйдут сами.
+(Публичайзер уже установлен; как генерить `_public` — см. `docs/09` / BepInEx.AssemblyPublicizer.)
+
+**Если A не сработал (путь B):** перевести проблемные патчи на строковые имена
+`[HarmonyPatch(typeof(X), "Method")]` + доступ через AccessTools/Traverse (string не требует
+compile-доступа). Реально удалённые в v14 типы/методы — отключить (пример: `_DisableCassie.cs`,
+патч на `NineTailedFoxAnnouncer` уже закомментирован — тип удалён игрой).
+
+**Архитектура shim'а** (чтобы не ломать): выходная сборка называется `Qurre.dll` (drop-in замена
+Qurre). `Player` живёт в `Qurre.API.Controllers`, `Client` — в `Qurre.API.Classification.Player`,
+движок построек `Qurre.API.Addons.Models` реализован на родных LabAPI AdminToys (PrimitiveObjectToy/
+LightSourceToy). Карта событий Qurre→LabAPI — в `EventMap.cs` (наполняется), полный API LabApi —
+`docs/labapi_1.1.7_api_reference.txt`. **Не коммить секреты/DLL/дампы (см. `.gitignore`).**
+
+После работы — обнови этот лог и `TODO.md`, затем commit + push.
+
+---
+
 ### 2026-06-08 (2) 🔄 IN_PROGRESS — Agent: Claude Code (Opus)
 
 **Status**: IN_PROGRESS — плагин компилируется до **12 ошибок** (с 887, −98.6%)
