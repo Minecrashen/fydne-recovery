@@ -291,7 +291,7 @@ namespace Qurre.API
             {
                 try
                 {
-                    var elevator = Lab.Elevator.List.FirstOrDefault(x => x.WorldSpaceBounds.Contains(p.Position));
+                    var elevator = Lab.Elevator.List.FirstOrDefault(x => x.WorldSpaceRelativeBounds.Contains(p.Position));
                     return Lift.Get(elevator);
                 }
                 catch

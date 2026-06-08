@@ -93,7 +93,7 @@ namespace Qurre.API.Controllers
         public GameObject GameObject => Base?.Base?.gameObject;
         public Transform Transform => Base?.Base?.transform;
         public Interactables.Interobjects.ElevatorGroup Type => Base?.Group ?? default;
-        public Bounds Bounds => Base?.WorldSpaceBounds ?? default;
+        public Bounds Bounds => Base != null ? (Bounds)Base.WorldSpaceRelativeBounds : default;
         public Vector3 Scale => Transform?.localScale ?? Vector3.one;
         public Vector3 Position
         {
