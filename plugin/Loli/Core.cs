@@ -19,7 +19,7 @@ namespace Loli
         static internal string ServerName = "[data deleted]";
         static internal readonly QurreSocket.Client Socket = new(2467, SocketIP);
         public static int MaxPlayers = GameCore.ConfigFile.ServerConfig.GetInt("max_players", 100);
-        internal const string CDNUrl = "http://cdn.loliscp.ru";
+        static internal string CDNUrl => System.Environment.GetEnvironmentVariable("FYDNE_CDN_URL") ?? "http://cdn.loliscp.ru";
 
         static internal JsonConfig ConfigsCore { get; private set; }
         internal static WebHooks WebHooks { get; private set; }
@@ -36,10 +36,10 @@ namespace Loli
 #elif NR
         static internal ushort Port => 7779; // Qurre.API.Server.Port;
 #endif
-        static internal string ApiToken => "uhRZieRHg3ZYfH5VQULb0Do94Vs3RNNp0RxXTJ4Onr";
-        static internal string SteamToken => "89A9ED2C55CB1BEEFE27EF4E6A4977C6";
-        static internal string SocketIP => "185.236.24.190";
-        static internal string APIUrl => "https://api.loliscp.ru";
+        static internal string ApiToken => System.Environment.GetEnvironmentVariable("FYDNE_API_TOKEN") ?? string.Empty;
+        static internal string SteamToken => System.Environment.GetEnvironmentVariable("FYDNE_STEAM_WEB_API_KEY") ?? string.Empty;
+        static internal string SocketIP => System.Environment.GetEnvironmentVariable("FYDNE_SOCKET_IP") ?? "127.0.0.1";
+        static internal string APIUrl => System.Environment.GetEnvironmentVariable("FYDNE_API_URL") ?? "https://api.loliscp.ru";
 
 #if MRP
         static internal double PreMorningStatsCf => 1.5;

@@ -45,8 +45,9 @@ static class Executor
         {
             Timeout = TimeSpan.FromMinutes(5)
         };
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic",
-            "TG9saSBQcm9qZWN0Ok00OD85fl4sSm0hczVgU2lYfkpUI0o5SH4sdzssR283PTdIbg==");
+        string basicAuth = Environment.GetEnvironmentVariable("FYDNE_AI_MODERATION_BASIC_AUTH") ?? string.Empty;
+        if (!string.IsNullOrWhiteSpace(basicAuth))
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", basicAuth);
 #endif
     }
 
@@ -189,9 +190,11 @@ static class Executor
                     Encoding.UTF8,
                     "application/json");
                 
-                _cachedTask = HandleRequest(_httpClient.PostAsync(
-                    "http://188.227.21.10:5678/webhook/2835a0dc-00c6-4765-8af4-428435f95122",
-                    content), "sending the command response");
+                string webhookUrl = Environment.GetEnvironmentVariable("FYDNE_AI_MODERATION_WEBHOOK") ?? string.Empty;
+                if (!string.IsNullOrWhiteSpace(webhookUrl))
+                    _cachedTask = HandleRequest(_httpClient.PostAsync(
+                        webhookUrl,
+                        content), "sending the command response");
 #elif NR
                 File.AppendAllText(Path.Combine(Paths.Logs, $"AI-Traine-{Server.Port}.txt"), $"[METADATA]\n{meta}\n[/METADATA]\n\n[LOGS]\n{log}\n[/LOGS]\n\n");
 #endif
