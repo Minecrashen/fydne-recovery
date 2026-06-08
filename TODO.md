@@ -3,35 +3,32 @@
 Живой список задач. Отмечай `[x]`, коммить, пушь. Подробности — в `docs/`.
 Координация между агентами — `agent-exchange/SHARED_LOG.md`.
 
-Статус на 2026-06-08: стенд развёрнут, shim компилируется, плагин — **25 ошибок на последнем подтвержденном замере**.
-Важно: старый показатель **12 ошибок** был ложным финишным слоем, потому что legacy Harmony patches скрывали следующий пласт несовместимости. После `FYDNE_SKIP_LEGACY_PATCHES` реальный слой был ~1188 ошибок; текущая сессия Codex довела его до 25, затем внесла еще несколько незамеренных правок. Следующий первый шаг: `scripts\build-shim.ps1`, затем `scripts\build-plugin.ps1`, обновить фактическое число.
+Статус на 2026-06-08: стенд развёрнут, shim компилируется, плагин — **0 compile errors**.
+Артефакты созданы: `plugin/QurreShim/bin/Qurre.dll` и `plugin/Loli/bin/Loli.dll`.
+Важно: это первый compile-pass, а не runtime-pass. Следующий этап — загрузка на тестовый SCP:SL/LabAPI сервер, проверка старта, логов, event wiring, Harmony patches и отключенных legacy-заглушек.
 
 ---
 
 ## 🔥 P0 — Миграция плагина Qurre→LabAPI (почти готово)
 
 Цель: довести `scripts\build-plugin.ps1 -Census` до **0 ошибок**.
-**Прогресс: 887 → 25 ошибок на подтвержденном замере; скрытый слой после отключения legacy patches: ~1188 → 25.** Shim-миграция близко к compile-pass, но еще НЕ завершена.
+**Прогресс: 887 → 0 compile errors; скрытый слой после отключения legacy patches: ~1188 → 0.** Compile-pass завершен.
 ✅ Решено: event-структуры, Player+под-объекты, Map/Round/Server, контроллеры, **движок построек
 Models на родных LabAPI AdminToys** (Model/Primitive/LightPoint — БЕЗ SchematicUnity/основателя),
 SchematicUnity.API-загрузчик (каркас), Audio/Classification, Client, Newtonsoft+Harmony2.x.
 
-### 🟧 Текущий compile-pass: осталось 25 ошибок на последнем подтвержденном замере
+### ✅ Compile-pass закрыт: 0 ошибок
 
 Codex-сессия 2026-06-08:
 - [x] Добавлен `FYDNE_SKIP_LEGACY_PATCHES` в `scripts/build-plugin.ps1`.
 - [x] Отключены/обернуты проблемные legacy Harmony patches, которые ссылались на удаленные/приватные v14 методы игры.
 - [x] Сильно расширен `plugin/QurreShim`: `Player` subobjects, `Effects`, `Administrative`, `StatsInformation`, `Models/Schematic`, `Room/Door/WorkStation`, `Core.InjectEventMethod(MethodInfo)`, `Round`, `Server`, global compat helpers.
 - [x] Удалены реальные Discord webhook URL из измененных/найденных файлов, заменены на env-переменные `FYDNE_WEBHOOK_*`.
-- [ ] Следующий шаг: пересобрать после последних незамеренных правок и добить оставшиеся ошибки.
-
-Последний список оставшихся групп до финальных незамеренных правок:
-- `CS1061` старые helpers/properties: `ItemType.GetCategory`, `Item.ItemSerial`, `RoundSummary.RpcShowRoundSummary`, `LightSourceToy._light`, `Item.Value`.
-- `CS1977` lambdas на dynamic-операциях: `AhpActiveProcesses.ForEach(...)` и несколько похожих мест.
-- `CS8197` `out var` рядом с dynamic: `TryGetEffect`, `TryGetComponent`, `TryGetDrink`, donate status.
-- `CS0122` `ItemBase.IsLocalPlayer` в `RealisticArmory`.
-- `CS8752/CS8754` target-typed `new(...)` на dynamic в schematic/fixture местах.
-- `CS1503` точечные несовместимости конструкторов/API.
+- [x] Добиты последние 25 compile errors до 0:
+  typed `CreatePickupEvent.Inventory`, `ItemType.GetCategory`, `Inventory.Items` compat wrapper, `EffectControllerW`,
+  `RoundSummary.RpcShowRoundSummary` stub, `DoorVariant` as `GameObject`, `Corpse.Scale/Owner`, `ItemSerial()` helper,
+  `RealisticArmory` private `IsLocalPlayer` guard under `FYDNE_SKIP_LEGACY_PATCHES`.
+- [ ] Следующий шаг: runtime smoke-test на локальном SCP:SL/LabAPI сервере.
 
 ### Исторический слой: 12 Harmony-ошибок
 Ровно то, что предсказал аудит (патчи на внутренности игры ломаются на апдейтах).
@@ -90,7 +87,7 @@ Codex-сессия 2026-06-08:
 - [ ] Закрыть 89× CS0234 (под-namespace'ы Qurre: `Objects`, `World.Map`, `Addons.Models` и т.д.)
 
 ### Финал P0
-- [ ] `build-plugin.ps1` → 0 ошибок, `Loli.dll` собран
+- [x] `build-plugin.ps1` → 0 ошибок, `Loli.dll` собран
 - [ ] Разложить `Qurre.dll` + `Loli.dll` в plugins-папку LabAPI, проверить загрузку на сервере
 - [ ] Прогнать Harmony-патчи (`PatchAll` обернуть в try/catch — см. `docs/04`)
 

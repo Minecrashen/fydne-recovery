@@ -76,6 +76,37 @@ plugin/QurreShim  — shim Qurre→LabAPI (компилируется)
 
 ## 📝 LOG ENTRIES
 
+### 2026-06-08 (5) ✅ COMPILE PASS — Agent: Codex
+
+**Status**: COMPILE_PASS — `Qurre.dll` and `Loli.dll` build with **0 compile errors**.
+**Related To**: Qurre→LabAPI shim recovery, first plugin DLL artifact.
+
+Verified commands:
+- `scripts/build-shim.ps1` → OK, warnings only.
+- `scripts/build-plugin.ps1` → OK, `0` errors.
+
+Artifacts:
+- `plugin/QurreShim/bin/Qurre.dll` — 68,096 bytes.
+- `plugin/Loli/bin/Loli.dll` — 574,976 bytes.
+
+Final compile fixes after the 25-error checkpoint:
+- Replaced missing `ItemType.GetItemCategory()` with explicit `ItemType.GetCategory()` mapping.
+- Fixed `Model(...)` overload ambiguity in `AirDrop`.
+- Typed event fields that were blocking compile: `CreatePickupEvent.Inventory`, `EventBase.Inventory`, `EventBase.Corpse`.
+- Added compat wrappers/helpers: `EffectControllerW`, `InventoryItemCompat`, `Corpse.Scale/Owner`, `ItemSerial()`, `RemoveWhere`, `RpcShowRoundSummary`.
+- Replaced private/removed API usage in compile path: `ItemBase.IsLocalPlayer` guards under `FYDNE_SKIP_LEGACY_PATCHES`, `light._light` → `light.gameObject`, `ev.Inventory._hub` → `ev.Player` position fallback.
+
+Important warning:
+This is only a **compile-pass**, not a runtime-pass. A large part of the shim is still compatibility scaffolding/stubs. Next work must be runtime smoke testing:
+1. Copy `Qurre.dll` + `Loli.dll` into the LabAPI plugin folder of the local SCP:SL server.
+2. Start server and collect logs.
+3. Fix first-load exceptions in this order: plugin bootstrap, dependency load, event wiring, Harmony patch failures, map/model spawn, player join/spawn loop.
+4. Keep `FYDNE_SKIP_LEGACY_PATCHES` enabled until runtime is stable.
+
+Do not commit `dependencies/`, game DLLs, generated server folders, IPs, tokens, DB dumps, or webhook URLs.
+
+---
+
 ### 2026-06-08 (4) 🔄 IN_PROGRESS — Agent: Codex
 
 **Status**: IN_PROGRESS — shim compiles; plugin was reduced to **25 compile errors on the last confirmed build**. After that, a few more targeted fixes were made but not re-measured because the user asked to stop, update logs, and commit.

@@ -3,6 +3,7 @@
 // EventBase несёт общие поля (по объединению ev.* в плагине). Специфика — в конкретных классах.
 // Wrapper-типизированные поля (Station/Pickup/Item/Generator/Corpse) добавляются в проходе контроллеров.
 using UnityEngine;
+using System.Collections.Generic;
 using Qurre.API;
 using Qurre.API.Objects;
 using Qurre.API.Controllers;
@@ -56,8 +57,8 @@ namespace Qurre.Events.Structs
         public ItemBase NewItem;
         public ItemBase OldItem;
         public dynamic Info;
-        public dynamic Inventory;
-        public dynamic Corpse;
+        public List<ItemBase> Inventory;
+        public Corpse Corpse;
         public dynamic DamageInfo;
         public dynamic Generator;
         public dynamic Locker;
@@ -132,7 +133,7 @@ namespace Qurre.Events.Structs
     public class GeneratorStatusEvent : EventBase { }
     public class ActivateGeneratorEvent : EventBase { }
     public class TriggerTeslaEvent : EventBase { }
-    public class CreatePickupEvent : EventBase { }
+    public class CreatePickupEvent : EventBase { public new InventorySystem.Inventory Inventory; }
     public class CorpseSpawnedEvent : EventBase { }
 
     // --- Наручники ---

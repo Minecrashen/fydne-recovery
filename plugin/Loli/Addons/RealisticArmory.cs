@@ -164,8 +164,10 @@ namespace Loli.Addons
             [HarmonyPostfix]
             static void Call(ItemBase __instance)
             {
+#if !FYDNE_SKIP_LEGACY_PATCHES
                 if (__instance.IsLocalPlayer)
                     return;
+#endif
 
                 if (__instance.ItemTypeId is not ItemType.ArmorCombat
                     and not ItemType.ArmorHeavy
@@ -183,8 +185,10 @@ namespace Loli.Addons
             [HarmonyPostfix]
             static void Call(ItemBase __instance)
             {
+#if !FYDNE_SKIP_LEGACY_PATCHES
                 if (__instance.IsLocalPlayer)
                     return;
+#endif
 
                 if (__instance.ItemTypeId is not ItemType.ArmorCombat
                     and not ItemType.ArmorHeavy

@@ -874,7 +874,7 @@ namespace Loli.Addons
                         {
                             try
                             {
-                                NetworkServer.Destroy(light._light.gameObject);
+                                NetworkServer.Destroy(light.gameObject);
                                 lights++;
                             }
                             catch { }

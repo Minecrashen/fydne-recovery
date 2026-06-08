@@ -69,7 +69,7 @@ namespace Qurre.API
         public InventoryW(Lab.Player b) { p = b; }
         public InventorySystem.Inventory Base => p.ReferenceHub.inventory;
         public AmmoW Ammo => new AmmoW(p.Ammo);
-        public Dictionary<ushort, Lab.Item> Items => p.Items?.ToDictionary(x => x.Serial, x => x) ?? new Dictionary<ushort, Lab.Item>();
+        public Dictionary<ushort, InventoryItemCompat> Items => p.Items?.ToDictionary(x => x.Serial, x => new InventoryItemCompat(x)) ?? new Dictionary<ushort, InventoryItemCompat>();
         public int ItemsCount => p.Items?.Count() ?? 0;
         public void Clear() => p.ClearInventory(true, true);
         public void Reset() => Clear();
@@ -85,6 +85,7 @@ namespace Qurre.API
         public void RemoveItem(ushort serial) { try { p.DropItem(serial); } catch { } }
         public void RemoveItem(ushort serial, bool destroy) { try { p.DropItem(serial); } catch { } }
         public void RemoveItem(Lab.Item item) { if (item != null) RemoveItem(item.Serial); }
+        public void RemoveItem(InventoryItemCompat item) { if (item != null) RemoveItem(item.Serial); }
         public void SelectItem(ushort serial) { try { p.CurrentItem = p.Items.FirstOrDefault(x => x.Serial == serial); } catch { } }
     }
 
@@ -99,6 +100,23 @@ namespace Qurre.API
         public ushort Ammo762 { get => Get(ItemType.Ammo762x39); set => Set(ItemType.Ammo762x39, value); }
         public ushort Ammo44Cal { get => Get(ItemType.Ammo44cal); set => Set(ItemType.Ammo44cal, value); }
         public ushort Ammo12Gauge { get => Get(ItemType.Ammo12gauge); set => Set(ItemType.Ammo12gauge, value); }
+    }
+
+    public class InventoryItemCompat
+    {
+        readonly Lab.Item item;
+        public InventoryItemCompat(Lab.Item source) { item = source; }
+        public ushort Serial => item?.Serial ?? 0;
+        public ItemType ItemTypeId
+        {
+            get
+            {
+                try { return (ItemType)((dynamic)item).Type; } catch { }
+                try { return (ItemType)((dynamic)item).ItemTypeId; } catch { }
+                return ItemType.None;
+            }
+        }
+        public ItemCategory Category => ItemTypeId.GetCategory();
     }
 
     public class AhpProcess
@@ -151,7 +169,7 @@ namespace Qurre.API
     {
         readonly Lab.Player p;
         public EffectsW(Lab.Player b) { p = b; }
-        public dynamic Controller => p.ReferenceHub.playerEffectsController;
+        public EffectControllerW Controller => new EffectControllerW();
         public void Enable(Qurre.API.Objects.EffectType type, float duration = 0f, bool addDuration = false) { }
         public void Enable(CustomPlayerEffects.StatusEffectBase effect, float duration = 0f, bool addDuration = false) { }
         public void Enable<T>(float duration = 0f, bool addDuration = false) where T : CustomPlayerEffects.StatusEffectBase { }
@@ -181,6 +199,23 @@ namespace Qurre.API
         public void RaLogin() { }
         public void RaLogout() { }
         public void Ban(long duration, string reason = "", string issuer = "") { }
+    }
+
+    public class EffectControllerW
+    {
+        public bool TryGetEffect<T>(out T effect) where T : CustomPlayerEffects.StatusEffectBase
+        {
+            effect = null;
+            return false;
+        }
+
+        public bool TryGetEffect(string name, out CustomPlayerEffects.StatusEffectBase effect)
+        {
+            effect = null;
+            return false;
+        }
+
+        public void UseMedicalItem(InventorySystem.Items.ItemBase item) { }
     }
 
     public class StatsInformationW

@@ -65,7 +65,7 @@ namespace Qurre.API.Controllers
         public bool Lock { get; set; }
         public bool Destroyed { get; set; }
         public bool IsLift => false;
-        public dynamic DoorVariant => Base != null ? Base.Base : GameObject;
+        public GameObject DoorVariant => GameObject;
         public dynamic Permissions { get; set; }
         public void Unlock() { }
         public void Destroy() { Destroyed = true; try { UnityEngine.Object.Destroy(GameObject); } catch { } }
@@ -90,6 +90,8 @@ namespace Qurre.API.Controllers
     {
         public Vector3 Position { get; set; }
         public Quaternion Rotation { get; set; }
+        public Vector3 Scale { get; set; } = Vector3.one;
+        public Player Owner { get; set; }
         public GameObject GameObject { get; set; }
         public Corpse() { }
         public Corpse(PlayerRoles.RoleTypeId role, Vector3 position, Quaternion rotation, PlayerStatsSystem.DamageHandlerBase damageHandler, string nickname)
@@ -244,10 +246,87 @@ namespace Qurre.API
     {
         public static ItemCategory GetCategory(this ItemType type)
         {
-            try { return type.GetItemCategory(); }
-            catch { return ItemCategory.None; }
+            switch (type)
+            {
+                case ItemType.Ammo9x19:
+                case ItemType.Ammo12gauge:
+                case ItemType.Ammo44cal:
+                case ItemType.Ammo556x45:
+                case ItemType.Ammo762x39:
+                    return ItemCategory.Ammo;
+
+                case ItemType.GunCOM15:
+                case ItemType.GunCOM18:
+                case ItemType.GunCom45:
+                case ItemType.GunRevolver:
+                case ItemType.GunFSP9:
+                case ItemType.GunCrossvec:
+                case ItemType.GunE11SR:
+                case ItemType.GunFRMG0:
+                case ItemType.GunLogicer:
+                case ItemType.GunAK:
+                case ItemType.GunShotgun:
+                case ItemType.GunA7:
+                    return ItemCategory.Firearm;
+
+                case ItemType.GrenadeFlash:
+                case ItemType.GrenadeHE:
+                    return ItemCategory.Grenade;
+
+                case ItemType.ArmorLight:
+                case ItemType.ArmorCombat:
+                case ItemType.ArmorHeavy:
+                    return ItemCategory.Armor;
+
+                case ItemType.Radio:
+                    return ItemCategory.Radio;
+
+                case ItemType.Medkit:
+                case ItemType.Painkillers:
+                case ItemType.Adrenaline:
+                    return ItemCategory.Medical;
+
+                case ItemType.SCP018:
+                case ItemType.SCP1576:
+                case ItemType.SCP207:
+                case ItemType.SCP244a:
+                case ItemType.SCP244b:
+                case ItemType.SCP268:
+                case ItemType.SCP330:
+                case ItemType.SCP500:
+                case ItemType.SCP1853:
+                case ItemType.SCP2176:
+                case ItemType.AntiSCP207:
+                    return ItemCategory.SCPItem;
+
+                case ItemType.KeycardJanitor:
+                case ItemType.KeycardScientist:
+                case ItemType.KeycardResearchCoordinator:
+                case ItemType.KeycardZoneManager:
+                case ItemType.KeycardGuard:
+                case ItemType.KeycardMTFPrivate:
+                case ItemType.KeycardContainmentEngineer:
+                case ItemType.KeycardMTFOperative:
+                case ItemType.KeycardMTFCaptain:
+                case ItemType.KeycardFacilityManager:
+                case ItemType.KeycardChaosInsurgency:
+                case ItemType.KeycardO5:
+                    return ItemCategory.Keycard;
+
+                default:
+                    return ItemCategory.None;
+            }
         }
 
         public static ushort ItemSerial(this LabApi.Features.Wrappers.Item item) => item?.Serial ?? 0;
+
+        public static void RemoveWhere<T>(this List<T> list, Predicate<T> match)
+        {
+            list?.RemoveAll(match);
+        }
+
+        public static void RpcShowRoundSummary(this RoundSummary summary, object classList, object escapedClassD, RoundSummary.LeadingTeam leadingTeam, int e1, int e2, int e3, int e4, int e5)
+        {
+        }
     }
 }

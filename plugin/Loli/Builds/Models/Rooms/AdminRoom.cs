@@ -60,7 +60,8 @@ static class AdminRoom
     [EventMethod(MapEvents.CreatePickup)]
     static void AntiAmmo(CreatePickupEvent ev)
     {
-        if (Vector3.Distance(WaitingSpawnPoint, ev.Inventory._hub.gameObject.transform.position) > 30f)
+        Vector3 sourcePosition = ev.Player?.MovementState.Position ?? Vector3.zero;
+        if (Vector3.Distance(WaitingSpawnPoint, sourcePosition) > 30f)
             return;
 
         if (ev.Info.ItemId.GetCategory() is not ItemCategory.Ammo)
@@ -173,7 +174,7 @@ static class AdminRoom
                     prm.Base.Collider = false;
 
                 if (obj.Name.StartsWith("LightQuad"))
-                    prm.Base.Color = new(10, 10, 8, 0.1f);
+                    prm.Base.Color = new Color(10, 10, 8, 0.1f);
             }
 
             if (obj.Light != null)

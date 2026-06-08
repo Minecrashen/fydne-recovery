@@ -40,7 +40,7 @@ namespace Loli.Addons
         static internal void Waiting()
         {
             _calling = false;
-            PlaneModel = new("AirDrope_Plane", new(450, 1031, -42f), new(0, 180));
+            PlaneModel = new("AirDrope_Plane", new(450, 1031, -42f), new Vector3(0, 180, 0));
             PlaneModel.AddPart(new ModelPrimitive(PlaneModel, PrimitiveType.Quad, new Color(4, 0, 0), Vector3.zero, new(90, 0, 0), new(10, 3, 1), false));
             PlaneModel.AddPart(new ModelPrimitive(PlaneModel, PrimitiveType.Quad, new Color(4, 0, 0), new(0, 0, 2.3f), new(90, -60, 0), new(2, 7, 1), false));
             PlaneModel.AddPart(new ModelPrimitive(PlaneModel, PrimitiveType.Quad, new Color(4, 0, 0), new(0, 0, -2.3f), new(90, 60, 0), new(2, 7, 1), false));

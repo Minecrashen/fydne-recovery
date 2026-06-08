@@ -234,7 +234,7 @@ namespace Loli.Modules
 
             var s1 = ev.Corpse.Scale;
             var s2 = ev.Corpse.Owner.MovementState.Scale;
-            ev.Corpse.Scale = new(s1.x * s2.x, s1.y * s2.y, s1.z * s2.z);
+            ev.Corpse.Scale = new Vector3(s1.x * s2.x, s1.y * s2.y, s1.z * s2.z);
         }
 
 #if NR
@@ -268,7 +268,7 @@ namespace Loli.Modules
                 var ser = ev.Pickup.Info.Serial;
                 Pickup.Get(ev.Pickup).Destroy();
                 if (Clear.Pickups.Contains(ser))
-                    Clear.Pickups.Add(item.ItemSerial);
+                    Clear.Pickups.Add(item.ItemSerial());
             }
         }
 
