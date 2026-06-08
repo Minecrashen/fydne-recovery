@@ -37,9 +37,9 @@ namespace Qurre.API
 
                 foreach (var t in types)
                 {
-                    if (t.GetCustomAttribute<PluginInitAttribute>() == null) continue;
                     ScanType(t);
-                    InvokeMarked(t, typeof(PluginEnableAttribute));
+                    if (t.GetCustomAttribute<PluginInitAttribute>() != null)
+                        InvokeMarked(t, typeof(PluginEnableAttribute));
                 }
             }
 
