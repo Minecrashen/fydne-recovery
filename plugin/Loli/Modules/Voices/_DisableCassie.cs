@@ -5,6 +5,10 @@ using System.Reflection.Emit;
 
 namespace Loli.Modules.Voices
 {
+    // [v14 DRIFT] Тип NineTailedFoxAnnouncer удалён из игры (миграция Cassie -> Announcer).
+    // Отключение Cassie о смерти SCP переписать на событие LabAPI
+    // ServerEvents.CassieQueuingScpTermination (ev.IsAllowed = false). Патч отключён.
+    /*
     [HarmonyPatch(typeof(NineTailedFoxAnnouncer), nameof(NineTailedFoxAnnouncer.Update))]
     static class PATCH_DisableCassie_SCPDeath
     {
@@ -14,6 +18,7 @@ namespace Loli.Modules.Voices
             yield return new CodeInstruction(OpCodes.Ret);
         }
     }
+    */
 
     [HarmonyPatch(typeof(Scp079Recontainer), nameof(Scp079Recontainer.PlayAnnouncement))]
     static class PATCH_DisableCassie_Overcharge
