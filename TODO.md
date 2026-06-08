@@ -40,9 +40,10 @@ Codex-сессия 2026-06-08:
 - [x] Command bridge pass: LabAPI `CommandType.RemoteAdmin` → `RemoteAdminCommandEvent`,
   `CommandType.Client/Console` → `GameConsoleCommandEvent`; заполняются `Player/Sender/Name/Args`,
   `Reply` возвращается через `RaReply`/`Respond`.
-- [ ] Не считать runtime готовым: `UsedItem/UseItem/UsingRadio` пока НЕ подключены к LabAPI, потому что в текущей
-  LabAPI 1.1.7 сигнатуре не найден полезный payload для старых FYDNE-хендлеров; generator/workstation/locker/corpse
-  и часть SCP/map событий требуют следующего bridge-pass.
+- [x] Item/radio bridge pass: `UseItem/UsedItem` подключены через `UsableItem`, `UsingRadio` через `RadioItem/Drain`
+  с обратной записью `Allowed/Drain`.
+- [ ] Не считать runtime готовым: workstation, точная generator/locker/corpse семантика и часть SCP/map событий
+  требуют следующего bridge-pass и живого smoke-test.
 - [ ] Следующий шаг: runtime smoke-test на локальном SCP:SL/LabAPI сервере.
 
 ### Исторический слой: 12 Harmony-ошибок
@@ -87,7 +88,7 @@ Codex-сессия 2026-06-08:
 - [x] Пачка 7b (generator/locker/corpse partial): reflection-safe bridge для
   `InteractGenerator/ActivateGenerator`, `InteractLocker`, `CorpseSpawned`.
 - [x] Пачка 8a (эффекты partial): `EffectEnabled` через LabAPI `UpdatingEffect`.
-- [ ] Пачка 4b: `UsedItem/UseItem/UsingRadio` с реальным player/item/radio payload.
+- [x] Пачка 4b: `UsedItem/UseItem/UsingRadio` с реальным player/item/radio payload.
 - [ ] Пачка 6b: runtime-проверка reply/permission semantics для RA/client/server console.
 - [ ] Пачка 7c: workstation, полный generator payload/status semantics, полноценный locker/Tesla/corpse payload.
 - [ ] Пачка 8b: `EffectDisabled`/effect type mapping без эвристики по имени класса.

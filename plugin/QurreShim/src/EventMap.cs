@@ -152,6 +152,9 @@ namespace Qurre.API
             PlayerHandlers.DroppedItem += OnDroppedItem;
             PlayerHandlers.DroppingAmmo += OnDroppingAmmo;
             PlayerHandlers.ChangingItem += OnChangingItem;
+            PlayerHandlers.UsingItem += OnUsingItem;
+            PlayerHandlers.UsedItem += OnUsedItem;
+            PlayerHandlers.UsingRadio += OnUsingRadio;
             PlayerHandlers.Escaping += OnEscaping;
             PlayerHandlers.Cuffing += OnCuffing;
             PlayerHandlers.Uncuffing += OnUncuffing;
@@ -229,6 +232,9 @@ namespace Qurre.API
             PlayerHandlers.DroppedItem -= OnDroppedItem;
             PlayerHandlers.DroppingAmmo -= OnDroppingAmmo;
             PlayerHandlers.ChangingItem -= OnChangingItem;
+            PlayerHandlers.UsingItem -= OnUsingItem;
+            PlayerHandlers.UsedItem -= OnUsedItem;
+            PlayerHandlers.UsingRadio -= OnUsingRadio;
             PlayerHandlers.Escaping -= OnEscaping;
             PlayerHandlers.Cuffing -= OnCuffing;
             PlayerHandlers.Uncuffing -= OnUncuffing;
@@ -382,6 +388,9 @@ namespace Qurre.API
         static void OnDroppedItem(PArgs.PlayerDroppedItemEventArgs args) => Core.Dispatch(new DroppedItemEvent { Player = Q(args.Player), Pickup = args.Pickup?.Base });
         static void OnDroppingAmmo(PArgs.PlayerDroppingAmmoEventArgs args) { var ev = Core.Dispatch(new DropAmmoEvent { Player = Q(args.Player), Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }
         static void OnChangingItem(PArgs.PlayerChangingItemEventArgs args) { var ev = Core.Dispatch(new ChangeItemEvent { Player = Q(args.Player), OldItem = args.OldItem?.Base, NewItem = args.NewItem?.Base, Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }
+        static void OnUsingItem(PArgs.PlayerUsingItemEventArgs args) { var ev = Core.Dispatch(new UseItemEvent { Player = Q(args.Player), Item = args.UsableItem?.Base, Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }
+        static void OnUsedItem(PArgs.PlayerUsedItemEventArgs args) => Core.Dispatch(new UsedItemEvent { Player = Q(args.Player), Item = args.UsableItem?.Base });
+        static void OnUsingRadio(PArgs.PlayerUsingRadioEventArgs args) { var ev = Core.Dispatch(new UsingRadioEvent { Player = Q(args.Player), Item = args.RadioItem?.Base, Consumption = args.Drain, Allowed = args.IsAllowed }); args.Drain = ev.Consumption; args.IsAllowed = ev.Allowed; }
         static void OnEscaping(PArgs.PlayerEscapingEventArgs args) { var ev = Core.Dispatch(new EscapeEvent { Player = Q(args.Player), OldRole = args.OldRole, Role = args.NewRole, Allowed = args.IsAllowed }); args.NewRole = ev.Role; args.IsAllowed = ev.Allowed; }
         static void OnCuffing(PArgs.PlayerCuffingEventArgs args) { var ev = Core.Dispatch(new CuffEvent { Player = Q(args.Target), Cuffer = Q(args.Player), Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }
         static void OnUncuffing(PArgs.PlayerUncuffingEventArgs args) { var ev = Core.Dispatch(new UnCuffEvent { Player = Q(args.Target), Cuffer = Q(args.Player), Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }

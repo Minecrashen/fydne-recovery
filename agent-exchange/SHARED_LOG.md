@@ -17,7 +17,7 @@
 - **Стратегический (не-техн.):** возврат старой аудитории невозможен без **дампа MongoDB** —
   он только у основателя. «Без баз» решено стартовать с нуля (см. DECISION 2026-06-07).
 - **Runtime не проверен:** `Qurre.dll` и `Loli.dll` собираются, но ещё не загружались на живой SCP:SL/LabAPI сервер.
-- **Event bridge частичный:** `UsedItem/UseItem/UsingRadio`, workstation and exact generator/locker/corpse/Tesla semantics
+- **Event bridge частичный:** workstation and exact generator/locker/corpse/Tesla semantics
   и часть map/SCP payload ещё требуют отдельного bridge-pass.
 - **Железо:** французская `vm.nano` 2 vCore / 2 GB RAM годится только для лёгкого теста/ностальгического mini-сервера;
   полный публичный стек с несколькими SCP:SL инстансами и Mongo туда не помещается.
@@ -95,15 +95,15 @@ Changed:
 - `plugin/QurreShim/src/Structs/Structs.cs`: added distinct shim event types for round lifecycle, alpha detonation,
   LCZ decontamination, and SCP-079 recontainment.
 - `plugin/QurreShim/src/EventMap.cs`: filled legacy enum→event type map and added LabAPI subscriptions for:
-  round lifecycle/check/force-start; player join/leave/spawn/role/death/damage; doors; pickup/drop/change item; escape;
+  round lifecycle/check/force-start; player join/leave/spawn/role/death/damage; doors; pickup/drop/change/use/used item;
+  radio drain; escape;
   cuffs; ban/kick/reports/RA-list; RA/client/server-console command split with reply propagation;
   pickup creation/decon/door damage/door lock/cancellable open-door; reflection-safe generator/locker/corpse bridge;
   warhead start/stop/detonate;
   Scp914/173/096/079/049/106 partial events; effect updating.
 
 Known deferred bridge gaps:
-- `UsedItem`, `UseItem`, and `UsingRadio` are intentionally not wired yet: in LabAPI 1.1.7 the inspected args did not expose
-  enough player/item/radio payload for old FYDNE handlers, and firing empty events would create noisy null-reference runtime errors.
+- `UsedItem`, `UseItem`, and `UsingRadio` are now wired after raw metadata probing exposed `UsableItem`, `RadioItem`, and `Drain`.
 - Command reply/permission semantics still need runtime verification on RA, client console, and server console.
 - Workstation, exact generator/locker/corpse semantics, full Tesla payload, and full effect disabled/type mapping are still pending.
 
