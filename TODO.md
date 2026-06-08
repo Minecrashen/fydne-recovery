@@ -7,20 +7,41 @@
 
 ---
 
-## 🔥 P0 — Миграция плагина Qurre→LabAPI (текущий фокус)
+## 🔥 P0 — Миграция плагина Qurre→LabAPI (почти готово)
 
 Цель: довести `scripts\build-plugin.ps1 -Census` до **0 ошибок**.
-**Прогресс: 887 → 117 ошибок (−87%).** Остаток сконцентрирован в ОДНОЙ подсистеме (см. ниже).
+**Прогресс: 887 → 12 ошибок (−98.6%).** Shim-миграция фактически ЗАВЕРШЕНА.
+✅ Решено: event-структуры, Player+под-объекты, Map/Round/Server, контроллеры, **движок построек
+Models на родных LabAPI AdminToys** (Model/Primitive/LightPoint — БЕЗ SchematicUnity/основателя),
+SchematicUnity.API-загрузчик (каркас), Audio/Classification, Client, Newtonsoft+Harmony2.x.
 
-### 🔴 ГЛАВНЫЙ ОСТАВШИЙСЯ БЛОКЕР — схематик/постройки (Builds/)
-~100 из 117 ошибок — это подсистема кастомных построек: `Qurre.API.Addons.Models`
-(`Model` 416×, `ModelPrimitive` 275×, `Primitive` 125×, `PrimitiveParams`, `SObject`, `Scheme`)
-+ внешняя `SchematicUnity.API` (`SchematicManager`). Варианты:
-- [ ] (A) Получить у основателя оригинальную **`SchematicUnity.dll`** (с namespace `.API`) +
-      реализовать `Qurre.API.Addons.Models` — faithful.
-- [ ] (B) **Временно исключить `Builds/`** из сборки → получить загружаемое ЯДРО плагина
-      быстрее (постройки — фича, не core-геймплей), вернуть схематик позже.
-- [ ] Аудио-аддон `Qurre.API.Addons.Audio` (`AudioPlayerBot`) — отдельный модуль.
+### 🟧 ОСТАЛОСЬ 12 ОШИБОК — все в Harmony-патчах на v14-методы игры
+Ровно то, что предсказал аудит (патчи на внутренности игры ломаются на апдейтах).
+
+**5× CS0122 (приватные — нужен publicized Assembly-CSharp):**
+- [ ] `FirearmDamageHandler.ProcessDamage` (RealisticArmory.cs)
+- [ ] `NetPacket` ×3 (FixNetCrash.cs)
+- [ ] `Scp207.OnEffectsActivated` (Scps/Scp294 Patch.cs)
+
+**7× CS0117 (метод переименован/приватен в v14):**
+- [ ] `VoiceTransceiver.ServerReceiveMessage` ×2 (ScpSpeaks.cs, FixSpoiled.cs)
+- [ ] `ServerLogs.StartLogging` (NotFileLogs.cs)
+- [ ] `ServerConsole.RefreshToken` (GetVerkey.cs)
+- [ ] `Scp3114Strangle.ServerUpdateTarget` (AntiCringeUpdates.cs)
+- [ ] `Scp079Recontainer.PlayAnnouncement` (_DisableCassie.cs)
+- [ ] `DeadmanSwitch.OnUpdate` (DeleteDeadman.cs)
+- [ ] `CommandProcessor.CheckPermissions`
+
+**Два пути закрыть эти 12 (выбрать):**
+- [ ] (A) **Починить публичайзинг.** SDK 8.0.421 + BepInEx-публичайзер УЖЕ стоят (`fydne_build`).
+      Проблема: ссылка на `Assembly-CSharp_public.dll` ломает резолв (identity-коллизия с обычной
+      в той же папке deps). Следующий тест: **убрать обычную Assembly-CSharp.dll из deps**, оставить
+      только `_public` → тогда CS0122 и большинство CS0117 (приватные методы) уйдут сами.
+- [ ] (B) **Перевести патчи на строковые имена** `[HarmonyPatch(typeof(X), "Method")]` + доступ
+      через AccessTools/Traverse (string не требует compile-доступа). Для реально переименованных
+      в v14 — уточнить новые имена. Самые сломанные просто отключить (как NineTailedFoxAnnouncer).
+
+✅ NineTailedFoxAnnouncer-патч уже отключён (тип удалён игрой в v14, Cassie→Announcer).
 
 ### Event-структуры + обвязка (784× CS0246 — главный массив)
 - [ ] Создать ~70 event-структур в `plugin/QurreShim/src/Structs/` (поля — по использованию в плагине)

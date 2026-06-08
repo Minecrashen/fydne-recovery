@@ -9,7 +9,7 @@
 
 | Agent | Status | Working On |
 |-------|--------|------------|
-| Claude Code (Opus) | 🟢 ACTIVE | Миграция Qurre→LabAPI (shim). Каркас готов, идёт event-структурный слой |
+| Claude Code (Opus) | 🟢 ACTIVE | Миграция Qurre→LabAPI ПОЧТИ ГОТОВА: плагин 887→**12 ошибок**. Осталось 12 Harmony-патчей на v14 |
 | (другие) | — | — |
 
 ## 🔴 ACTIVE BLOCKERS
@@ -76,7 +76,27 @@ plugin/QurreShim  — shim Qurre→LabAPI (компилируется)
 
 ## 📝 LOG ENTRIES
 
-### 2026-06-08 🔄 IN_PROGRESS — Agent: Claude Code (Opus)
+### 2026-06-08 (2) 🔄 IN_PROGRESS — Agent: Claude Code (Opus)
+
+**Status**: IN_PROGRESS — плагин компилируется до **12 ошибок** (с 887, −98.6%)
+**Files Changed**: `plugin/QurreShim/src/*` (Models/Schematic/Client/MapBroadcast/PrimitiveParams),
+`plugin/_PluginGlobals.cs`, `plugin/Loli/Modules/Voices/_DisableCassie.cs` (откл. устаревший патч),
+`scripts/build-*.ps1`, `dependencies/` (-SchematicUnity.dll, +Newtonsoft 13, +Harmony 2.3.3)
+
+- ⚙️ **Движок построек написан САМ** на родных LabAPI AdminToys (`PrimitiveObjectToy`/`LightSourceToy`):
+  `Qurre.API.Addons.Models` (Model/ModelPrimitive/Primitive/LightPoint/CustomRoom). **Без SchematicUnity
+  и основателя.** Загрузчик `.json` (SchematicManager) — каркас написан, парсинг формата MapEditorReborn — TODO.
+- 🔧 FIX: Newtonsoft.Json 13 + Harmony 2.x (namespace HarmonyLib) подцеплены в deps (−~490 ошибок).
+- 📌 INFO: в Qurre `Player` лежит в `Qurre.API.Controllers`; `Client` — в `Qurre.API.Classification.Player`.
+- 🔴 BLOCKER (мелкий, build-config): публичайзинг. SDK 8.0.421 + BepInEx-публичайзер стоят в `fydne_build`,
+  но ссылка на `Assembly-CSharp_public.dll` ломает резолв (identity-коллизия с обычной в deps; даёт 1174
+  ложных ошибки). Следующий тест: убрать обычную Assembly-CSharp.dll из deps, оставить только `_public`.
+- ⏭️ ОСТАЛОСЬ: 12 ошибок = Harmony-патчи на v14-методы (5 приватных + 7 переименованных). См. TODO P0.
+  Два пути: (A) починить публичайзинг, (B) строковые имена патчей / отключить сломанные.
+
+---
+
+### 2026-06-08 (1) 🔄 IN_PROGRESS — Agent: Claude Code (Opus)
 
 **Status**: IN_PROGRESS
 **Files Changed**: `plugin/QurreShim/src/*` (Structs, QurreEnums, World.Map, Controllers Cassie/Tesla/WorkStation, JsonConfig, _PluginGlobals), `scripts/build-plugin.ps1`, `dependencies/` (Newtonsoft.Json 13.0.3 + Harmony 2.3.3)
