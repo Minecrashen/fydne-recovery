@@ -2,6 +2,8 @@
 // Реализация LoadSchematic (парсинг .json + спавн тоев) — следующий этап; сейчас каркас компилируется.
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 using VoiceChat;
 
@@ -112,10 +114,7 @@ namespace SchematicUnity.API
         /// </summary>
         public static Scheme LoadSchematic(string path, Vector3 position, Quaternion rotation = default)
         {
-            var scheme = new Scheme();
-            // TODO: if (File.Exists(path)) { parse json -> spawn toys -> scheme.Childrens }
-            scheme.Position = position;
-            return scheme;
+            return SchematicJsonLoader.Load(path, position, rotation);
         }
     }
 }

@@ -90,6 +90,23 @@ namespace Qurre.API.Controllers
         public Lab.Elevator Base { get; }
         Lift(Lab.Elevator b) { Base = b; }
         public static Lift Get(Lab.Elevator b) => b == null ? null : new Lift(b);
+        public GameObject GameObject => Base?.Base?.gameObject;
+        public Transform Transform => Base?.Base?.transform;
+        public Interactables.Interobjects.ElevatorGroup Type => Base?.Group ?? default;
+        public Bounds Bounds => Base?.WorldSpaceBounds ?? default;
+        public Vector3 Scale => Transform?.localScale ?? Vector3.one;
+        public Vector3 Position
+        {
+            get => Transform?.position ?? Vector3.zero;
+            set { if (Transform != null) Transform.position = value; }
+        }
+        public Quaternion Rotation
+        {
+            get => Transform?.rotation ?? Quaternion.identity;
+            set { if (Transform != null) Transform.rotation = value; }
+        }
+        public Interactables.Interobjects.ElevatorChamber.ElevatorSequence Status => Base?.CurrentSequence ?? default;
+        public void Use() => Base?.SendToNextFloor();
     }
 
     public class Tesla

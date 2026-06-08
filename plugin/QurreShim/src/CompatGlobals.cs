@@ -1,8 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Reflection;
+using Mirror;
+using Respawning;
+using Respawning.Waves;
+using Respawning.Waves.Generic;
 using UnityEngine;
 using Qurre.API.Addons.Audio;
+using BaseIntercom = PlayerRoles.Voice.Intercom;
+using BaseIntercomDisplay = PlayerRoles.Voice.IntercomDisplay;
 
 public static class Paths
 {
@@ -43,8 +51,39 @@ public static class GlobalLights
 
 public static class Respawn
 {
-    public static void CallMtfHelicopter() { }
-    public static void CallChaosCar() { }
+    public static List<SpawnableWaveBase> SpawnableWaveBases => WaveManager.Waves;
+    public static TimeBasedWave[] TimeBasedWaves => SpawnableWaveBases.OfType<TimeBasedWave>().ToArray();
+    public static NtfSpawnWave NtfSpawnWave => SpawnableWaveBases.OfType<NtfSpawnWave>().FirstOrDefault();
+    public static ChaosSpawnWave ChaosSpawnWave => SpawnableWaveBases.OfType<ChaosSpawnWave>().FirstOrDefault();
+    public static NtfMiniWave NtfMiniWave => SpawnableWaveBases.OfType<NtfMiniWave>().FirstOrDefault();
+    public static ChaosMiniWave ChaosMiniWave => SpawnableWaveBases.OfType<ChaosMiniWave>().FirstOrDefault();
+
+    public static int? NtfTokens
+    {
+        get => NtfSpawnWave?.RespawnTokens;
+        set { if (NtfSpawnWave != null) NtfSpawnWave.RespawnTokens = value ?? 0; }
+    }
+
+    public static int? ChaosTokens
+    {
+        get => ChaosSpawnWave?.RespawnTokens;
+        set { if (ChaosSpawnWave != null) ChaosSpawnWave.RespawnTokens = value ?? 0; }
+    }
+
+    public static void Spawn(SpawnableWaveBase wave, bool forceSpawn = false)
+    {
+        if (wave == null) return;
+        if (forceSpawn) WaveManager.Spawn(wave);
+        else WaveManager.InitiateRespawn(wave);
+    }
+
+    public static void CallMtfHelicopter() => InvokeAnimation(NtfSpawnWave);
+    public static void CallChaosCar() => InvokeAnimation(ChaosSpawnWave);
+
+    static void InvokeAnimation(SpawnableWaveBase wave)
+    {
+        if (wave != null) WaveUpdateMessage.ServerSendUpdate(wave, UpdateMessageFlags.Trigger);
+    }
 }
 
 public static class Decontamination
@@ -54,10 +93,68 @@ public static class Decontamination
 
 public static class Intercom
 {
-    public static PlayerRoles.Voice.IntercomState Status { get; set; }
-    public static float RemainingCooldown { get; set; }
-    public static float SpeechRemaining { get; set; }
-    public static string Text { get; set; } = "";
+    static readonly FieldInfo BaseSingleton = typeof(BaseIntercom).GetField("_singleton", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
+    static readonly FieldInfo DisplaySingleton = typeof(BaseIntercomDisplay).GetField("_singleton", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
+    static readonly FieldInfo NextTime = typeof(BaseIntercom).GetField("_nextTime", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+    static readonly FieldInfo CooldownTime = typeof(BaseIntercom).GetField("_cooldownTime", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+    static readonly FieldInfo DisplayText = typeof(BaseIntercomDisplay).GetField("_overrideText", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+
+    static BaseIntercom Base => BaseSingleton?.GetValue(null) as BaseIntercom;
+    static BaseIntercomDisplay Display => DisplaySingleton?.GetValue(null) as BaseIntercomDisplay;
+
+    public static PlayerRoles.Voice.IntercomState Status
+    {
+        get => BaseIntercom.State;
+        set => BaseIntercom.State = value;
+    }
+
+    public static double RemainingCooldown
+    {
+        get => Status == PlayerRoles.Voice.IntercomState.Cooldown ? Math.Max(GetNextTime() - NetworkTime.time, 0d) : 0d;
+        set => SetNextTime(NetworkTime.time + value);
+    }
+
+    public static float RechargeCooldown
+    {
+        get => GetFloat(CooldownTime);
+        set => SetField(CooldownTime, value);
+    }
+
+    public static float SpeechRemaining
+    {
+        get => Base?.RemainingTime ?? 0f;
+        set => SetNextTime(NetworkTime.time + value);
+    }
+
+    public static string Text
+    {
+        get => DisplayText?.GetValue(Display) as string ?? "";
+        set
+        {
+            var display = Display;
+            if (display != null) display.Network_overrideText = value ?? "";
+        }
+    }
+
+    static double GetNextTime()
+    {
+        var value = NextTime?.GetValue(Base);
+        return value is double number ? number : 0d;
+    }
+
+    static float GetFloat(FieldInfo field)
+    {
+        var value = field?.GetValue(Base);
+        return value is float number ? number : 0f;
+    }
+
+    static void SetNextTime(double value) => SetField(NextTime, value);
+
+    static void SetField(FieldInfo field, object value)
+    {
+        var instance = Base;
+        if (field != null && instance != null) field.SetValue(instance, value);
+    }
 }
 
 public static class DoorPrefabs

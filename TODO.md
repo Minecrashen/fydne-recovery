@@ -180,3 +180,24 @@ Codex-сессия 2026-06-08:
 - [x] Verification: `scripts/build-shim.ps1` OK; `scripts/build-plugin.ps1` OK, `0` errors.
 
 Remaining hard gate: live SCP:SL/LabAPI smoke-test. Compile/offline compatibility is materially better, but runtime is still unverified.
+
+---
+
+## 2026-06-08 Codex pass: respawn/intercom/lift/schematic parity
+
+- [x] Implemented Qurre-compatible respawn facade over current SCP:SL wave API:
+  `Respawn.CallMtfHelicopter()`, `Respawn.CallChaosCar()`, wave spawn helper, and token accessors.
+- [x] Implemented `Intercom` facade over current `PlayerRoles.Voice.Intercom`:
+  status, display text, cooldown, recharge cooldown, and speech remaining are now backed by game state.
+- [x] Expanded `Qurre.API.Controllers.Lift`:
+  type/group, bounds, position, rotation, scale, sequence status, and `Use()`.
+- [x] Implemented `Player.GamePlay.Lift` detection by checking the player's position against LabAPI elevator bounds.
+- [x] Implemented `Effects.Controller.UseMedicalItem(...)` through `LabApi.Features.Wrappers.UsableItem.Use()`.
+- [x] Replaced empty `SchematicManager.LoadSchematic(...)` behavior with a generic JSON loader for basic primitives and lights.
+- [x] Verification: `scripts/build-shim.ps1` OK; `scripts/build-plugin.ps1` OK, `0` errors.
+
+Still runtime-sensitive:
+- [ ] Verify respawn wave animation calls on a live server.
+- [ ] Verify intercom display override updates on clients.
+- [ ] Verify JSON schematic compatibility with the actual FYDNE `Schemes/*.json` files once they are available.
+- [ ] Audio voice playback remains a stub; compile compatibility exists, real sound output is not restored yet.

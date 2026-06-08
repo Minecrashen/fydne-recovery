@@ -327,3 +327,25 @@ Decision:
 Next:
 1. Continue Qurre-v2-guided shim parity for `WorkStation`, `Generator`, `Locker`, `Intercom`, `Respawn`, and audio.
 2. Run first live smoke-test once the user is ready to start a local SCP:SL/LabAPI server.
+
+---
+
+### 2026-06-08 (10) RESPAWN / INTERCOM / LIFT / SCHEMATIC PASS - Agent: Codex
+
+Status: OFFLINE_COMPAT_PASS - `Qurre.dll` and `Loli.dll` build with 0 compile errors.
+
+Changed:
+- Added current SCP:SL wave-backed `Respawn` facade: `CallMtfHelicopter`, `CallChaosCar`, `Spawn`, and MTF/Chaos token accessors.
+- Added real `Intercom` facade over `PlayerRoles.Voice.Intercom` and `IntercomDisplay`.
+- Expanded `Qurre.API.Controllers.Lift` and wired `Player.GamePlay.Lift` by elevator bounds.
+- Implemented `Effects.Controller.UseMedicalItem(...)` through LabAPI `UsableItem.Use()`.
+- Added `SchematicJsonLoader` and routed `SchematicManager.LoadSchematic(...)` through it. It supports generic JSON primitives/lights and skips unknown records safely.
+
+Verified:
+- `scripts/build-shim.ps1` -> OK, warnings only.
+- `scripts/build-plugin.ps1` -> OK, 0 errors.
+
+Remaining:
+- Live server smoke-test is still the hard gate.
+- Audio playback is still compile-compatible only; voice output needs a separate pass.
+- Actual FYDNE scheme JSON files are needed to validate schematic fidelity.

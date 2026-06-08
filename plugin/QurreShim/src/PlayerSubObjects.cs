@@ -285,7 +285,21 @@ namespace Qurre.API
         public bool GodMode { get => p.IsGodModeEnabled; set => p.IsGodModeEnabled = value; }
         public bool Cuffed => p.IsDisarmed;
         public Player Cuffer => Player.Get(p.DisarmedBy);
-        public Lift Lift => null;
+        public Lift Lift
+        {
+            get
+            {
+                try
+                {
+                    var elevator = Lab.Elevator.List.FirstOrDefault(x => x.WorldSpaceBounds.Contains(p.Position));
+                    return Lift.Get(elevator);
+                }
+                catch
+                {
+                    return null;
+                }
+            }
+        }
     }
 
     public class VariablesW
@@ -384,7 +398,18 @@ namespace Qurre.API
         public bool TryGetEffect(string name, out CustomPlayerEffects.StatusEffectBase effect)
             => p.TryGetEffect(name, out effect);
 
-        public void UseMedicalItem(InventorySystem.Items.ItemBase item) { }
+        public void UseMedicalItem(InventorySystem.Items.ItemBase item)
+        {
+            try
+            {
+                if (item is InventorySystem.Items.Usables.UsableItem usable)
+                {
+                    Lab.UsableItem.Get(usable)?.Use();
+                    return;
+                }
+            }
+            catch { }
+        }
     }
 
     public class StatsInformationW
