@@ -329,7 +329,18 @@ namespace Qurre.API
         static void OnDeath(PArgs.PlayerDeathEventArgs args) => Core.Dispatch(new DeadEvent { Player = Q(args.Player), Attacker = Q(args.Attacker), DamageInfo = args.DamageHandler, Damage = ReadDamage(args.DamageHandler), OldRole = args.OldRole, Position = args.OldPosition });
         static void OnHurting(PArgs.PlayerHurtingEventArgs args) { var ev = Core.Dispatch(new DamageEvent { Player = Q(args.Player), Attacker = Q(args.Attacker), DamageInfo = args.DamageHandler, Damage = ReadDamage(args.DamageHandler), Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }
         static void OnHurt(PArgs.PlayerHurtEventArgs args) => Core.Dispatch(new AttackEvent { Player = Q(args.Player), Attacker = Q(args.Attacker), DamageInfo = args.DamageHandler, Damage = ReadDamage(args.DamageHandler) });
-        static void OnInteractingDoor(PArgs.PlayerInteractingDoorEventArgs args) { var ev = Core.Dispatch(new InteractDoorEvent { Player = Q(args.Player), Door = Door.Get(args.Door), Allowed = args.IsAllowed && args.CanOpen }); args.CanOpen = ev.Allowed; args.IsAllowed = ev.Allowed; }
+        static void OnInteractingDoor(PArgs.PlayerInteractingDoorEventArgs args)
+        {
+            bool allowed = args.IsAllowed && args.CanOpen;
+            var door = Door.Get(args.Door);
+            var player = Q(args.Player);
+
+            var interact = Core.Dispatch(new InteractDoorEvent { Player = player, Door = door, Allowed = allowed });
+            var open = Core.Dispatch(new OpenDoorEvent { Player = player, Door = door, Allowed = interact.Allowed });
+
+            args.CanOpen = open.Allowed;
+            args.IsAllowed = open.Allowed;
+        }
         static void OnPickingUpItem(PArgs.PlayerPickingUpItemEventArgs args) { var ev = Core.Dispatch(new PrePickupItemEvent { Player = Q(args.Player), Pickup = args.Pickup?.Base, Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }
         static void OnPickedUpItem(PArgs.PlayerPickedUpItemEventArgs args) => Core.Dispatch(new PickupItemEvent { Player = Q(args.Player), Item = args.Item?.Base });
         static void OnDroppingItem(PArgs.PlayerDroppingItemEventArgs args) { var ev = Core.Dispatch(new DropItemEvent { Player = Q(args.Player), Item = args.Item?.Base, Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }

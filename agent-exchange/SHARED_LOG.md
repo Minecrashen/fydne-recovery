@@ -97,14 +97,14 @@ Changed:
 - `plugin/QurreShim/src/EventMap.cs`: filled legacy enum→event type map and added LabAPI subscriptions for:
   round lifecycle/check/force-start; player join/leave/spawn/role/death/damage; doors; pickup/drop/change item; escape;
   cuffs; ban/kick/reports/RA-list; RA/client/server-console command split with reply propagation;
-  pickup creation/decon/door damage/door lock; warhead start/stop/detonate;
+  pickup creation/decon/door damage/door lock/cancellable open-door; warhead start/stop/detonate;
   Scp914/173/096/079/049/106 partial events; effect updating.
 
 Known deferred bridge gaps:
 - `UsedItem`, `UseItem`, and `UsingRadio` are intentionally not wired yet: in LabAPI 1.1.7 the inspected args did not expose
   enough player/item/radio payload for old FYDNE handlers, and firing empty events would create noisy null-reference runtime errors.
 - Command reply/permission semantics still need runtime verification on RA, client console, and server console.
-- Generators, workstation, lockers, corpse spawn, full Tesla/OpenDoor payload, and full effect disabled/type mapping are still pending.
+- Generators, workstation, lockers, corpse spawn, full Tesla payload, and full effect disabled/type mapping are still pending.
 
 Next runtime step:
 1. Put `Qurre.dll` and `Loli.dll` in the same LabAPI plugin directory.

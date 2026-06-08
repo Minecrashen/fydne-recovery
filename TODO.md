@@ -82,11 +82,12 @@ Codex-сессия 2026-06-08:
 - [x] Пачка 4a (двери/пикапы/дроп/эскейп): `InteractDoor/PickupItem/PrePickupItem/DropItem/DroppedItem/DropAmmo/ChangeItem/Escape`.
 - [x] Пачка 5a (SCP partial): `Scp914/Scp173/Scp096/Scp079/Scp049/Scp106` основные события.
 - [x] Пачка 6a (админ/команды partial): `RemoteAdminCommand`, `GameConsoleCommand`, RA-list, ban/kick/reports.
-- [x] Пачка 7a (карта/варх partial): `DamageDoor/LockDoor/CreatePickup/LczDecontamination/TriggerTesla/AlphaWarhead`.
+- [x] Пачка 7a (карта/варх partial): `OpenDoor` cancellable через `InteractingDoor`,
+  `DamageDoor/LockDoor/CreatePickup/LczDecontamination/TriggerTesla/AlphaWarhead`.
 - [x] Пачка 8a (эффекты partial): `EffectEnabled` через LabAPI `UpdatingEffect`.
 - [ ] Пачка 4b: `UsedItem/UseItem/UsingRadio` с реальным player/item/radio payload.
 - [ ] Пачка 6b: runtime-проверка reply/permission semantics для RA/client/server console.
-- [ ] Пачка 7b: `OpenDoor`, workstation, generators, lockers, corpse spawn, полноценный Tesla payload.
+- [ ] Пачка 7b: workstation, generators, lockers, corpse spawn, полноценный Tesla payload.
 - [ ] Пачка 8b: `EffectDisabled`/effect type mapping без эвристики по имени класса.
 
 ### Обёртки/контроллеры
