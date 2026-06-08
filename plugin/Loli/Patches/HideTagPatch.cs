@@ -1,4 +1,5 @@
-﻿using HarmonyLib;
+﻿#if !FYDNE_SKIP_LEGACY_PATCHES
+using HarmonyLib;
 using Loli.DataBase;
 using Loli.DataBase.Modules;
 using Qurre.API;
@@ -69,3 +70,4 @@ namespace Loli.Patches
         }
     }
 }
+#endif

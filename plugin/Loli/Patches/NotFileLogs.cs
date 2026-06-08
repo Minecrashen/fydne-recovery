@@ -4,6 +4,7 @@ using System.Reflection.Emit;
 
 namespace Loli.Patches
 {
+#if !FYDNE_SKIP_LEGACY_PATCHES
     [HarmonyPatch(typeof(ServerLogs), nameof(ServerLogs.StartLogging))]
     internal static class NotFileLogs1
     {
@@ -13,6 +14,7 @@ namespace Loli.Patches
             yield return new CodeInstruction(OpCodes.Ret);
         }
     }
+#endif
 
     [HarmonyPatch(typeof(ServerLogs), "AddLog")]
     internal static class NotFileLogs2

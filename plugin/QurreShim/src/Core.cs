@@ -118,6 +118,20 @@ namespace Qurre.API
                 list.RemoveAll(e => Equals(e.Key, (Delegate)method));
         }
 
+        public static void InjectEventMethod(MethodInfo method, int priority = 0)
+        {
+            var eventType = method?.GetParameters().FirstOrDefault()?.ParameterType;
+            if (eventType == null || !typeof(IBaseEvent).IsAssignableFrom(eventType)) return;
+            Add(eventType, new Entry { Priority = priority, Key = method, Invoke = ev => method.Invoke(null, new object[] { ev }) });
+        }
+
+        public static void ExtractEventMethod(MethodInfo method)
+        {
+            if (method == null) return;
+            foreach (var list in _byType.Values)
+                list.RemoveAll(e => Equals(e.Key, method));
+        }
+
         // ---- Вызов из обвязки LabAPI ----
 
         public static T Dispatch<T>(T ev) where T : IBaseEvent

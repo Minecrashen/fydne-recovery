@@ -20,6 +20,7 @@ namespace Loli.Modules.Voices
     }
     */
 
+#if !FYDNE_SKIP_LEGACY_PATCHES
     [HarmonyPatch(typeof(Scp079Recontainer), nameof(Scp079Recontainer.PlayAnnouncement))]
     static class PATCH_DisableCassie_Overcharge
     {
@@ -29,4 +30,5 @@ namespace Loli.Modules.Voices
             yield return new CodeInstruction(OpCodes.Ret);
         }
     }
+#endif
 }

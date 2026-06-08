@@ -19,6 +19,7 @@ namespace Qurre.API
 
         // Qurre Server.Host — игрок-хост; оборачиваем LabApi host'а.
         public static Player Host => Player.Get(Lab.Server.Host);
+        public static Player InventoryHost => Host;
 
         public static void Restart() => Lab.Server.Restart();
         public static void Shutdown() => Lab.Server.Shutdown();

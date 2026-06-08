@@ -337,7 +337,7 @@ namespace Loli.Modules
                 if (Data.Users.TryGetValue(userId, out var imain))
                     serverLvl = imain.lvl;
 
-                string hook = "https://discord.com/api/webhooks/1203544299879538708/Kw37zdaE1r36S1rQs-OjTI9WRKWbVlBRdrP649CORtdYTdo_t8DblxVD9j_cUgB_GSaa";
+                string hook = System.Environment.GetEnvironmentVariable("FYDNE_WEBHOOK_MODERATION") ?? string.Empty;
                 Dishook webhk = new(hook);
                 Embed embed = new()
                 {

@@ -353,7 +353,7 @@ namespace Loli.Concepts
                 _audioPlayer = AudioExtensions.PlayInIntercom(AudioCancelPath, "CO2");
 #endif
 
-                Cassie.Lock = false;
+                Qurre.API.Controllers.Cassie.Lock = false;
 
                 Activated = false;
 
@@ -478,7 +478,7 @@ namespace Loli.Concepts
             _audioPlayer = AudioExtensions.PlayInIntercom(AudioPath, "CO2");
 #endif
 
-            Cassie.Lock = true;
+            Qurre.API.Controllers.Cassie.Lock = true;
 
             Timing.RunCoroutine(Process(), Coroutine);
 

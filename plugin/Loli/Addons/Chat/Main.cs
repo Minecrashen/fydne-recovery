@@ -117,7 +117,7 @@ internal static class Main
 
     internal static void SendMessage(Player author, MessageType type, string[] args)
     {
-        if (VoiceChatMutes.Mutes.Contains(author.UserInformation.UserId) ||
+        if (CompatVoiceMutes.Mutes.Contains(author.UserInformation.UserId) ||
             VoiceChatMutes.GetFlags(author.ReferenceHub).HasFlag(VcMuteFlags.GlobalRegular))
         {
             author.Client.SendConsole("Вы глобально замучены.", "red");
@@ -214,7 +214,7 @@ internal static class Main
 
     internal static void SendPrivateMessage(Player author, string search, string[] args)
     {
-        if (VoiceChatMutes.Mutes.Contains(author.UserInformation.UserId) ||
+        if (CompatVoiceMutes.Mutes.Contains(author.UserInformation.UserId) ||
             VoiceChatMutes.GetFlags(author.ReferenceHub).HasFlag(VcMuteFlags.GlobalRegular))
         {
             author.Client.SendConsole("Вы глобально замучены.", "red");

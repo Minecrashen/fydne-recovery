@@ -76,6 +76,45 @@ plugin/QurreShim  — shim Qurre→LabAPI (компилируется)
 
 ## 📝 LOG ENTRIES
 
+### 2026-06-08 (4) 🔄 IN_PROGRESS — Agent: Codex
+
+**Status**: IN_PROGRESS — shim compiles; plugin was reduced to **25 compile errors on the last confirmed build**. After that, a few more targeted fixes were made but not re-measured because the user asked to stop, update logs, and commit.
+**Related To**: Qurre→LabAPI compile recovery, public-repo hygiene.
+
+Important correction: the previous “12 errors left” state was not a real finish line. Those 12 were the visible legacy Harmony patch layer. After adding `FYDNE_SKIP_LEGACY_PATCHES` and skipping the obsolete/private v14 patch targets, the actual next compatibility layer appeared at ~1188 errors. This session reduced that layer roughly:
+
+`1188 → 964 → 596 → 380 → 193 → 123 → 89 → 57 → 25`
+
+Main work done:
+- Added `FYDNE_SKIP_LEGACY_PATCHES` in `scripts/build-plugin.ps1`.
+- Wrapped/disabled obsolete Harmony patches that target removed/private SCP:SL v14 methods.
+- Expanded `plugin/QurreShim` heavily: Player subobjects, effects/admin/stats wrappers, Models/Schematic compatibility, Room/Door/WorkStation/Map/Round/Server helpers, MethodInfo event injection, audio stubs, global Qurre-like services.
+- Added compatibility wrappers for old Qurre patterns: `TryFind(out result, predicate)`, `RoomType.GetRoom`, `DoorType.GetDoor`, ammo shortcuts, `Map.Broadcast` returning `MapBroadcast`, `Round.CurrentRound` numeric token, old `Door.Lock` property, etc.
+- Replaced real Discord webhook URLs found during the session with env variables:
+  `FYDNE_WEBHOOK_BANS_PUBLIC`, `FYDNE_WEBHOOK_BANS_PATROL`, `FYDNE_WEBHOOK_BANS_ADMIN`, `FYDNE_WEBHOOK_BANS_OWNERS`,
+  `FYDNE_WEBHOOK_ANTICHEAT`, `FYDNE_WEBHOOK_MODERATION`, `FYDNE_WEBHOOK_BUG_REPORT`.
+
+Last confirmed build state:
+- `scripts/build-shim.ps1`: OK (`Qurre.dll` builds; warnings only).
+- `scripts/build-plugin.ps1`: FAIL with 25 errors.
+
+First next step:
+1. Run `scripts/build-shim.ps1`.
+2. Run `scripts/build-plugin.ps1`.
+3. Re-read `plugin/Loli/bin/build.log`; some of the 25 may already be fixed by the last unmeasured edits.
+
+Known remaining categories from the last measured 25:
+- `CS1061`: old helpers/properties such as `ItemType.GetCategory`, `Item.ItemSerial`, `RoundSummary.RpcShowRoundSummary`, `LightSourceToy._light`, `Item.Value`.
+- `CS1977`: lambdas passed through dynamic dispatch, mostly `AhpActiveProcesses.ForEach(...)`.
+- `CS8197`: `out var` with dynamic sources (`TryGetEffect`, `TryGetComponent`, `TryGetDrink`, donate status).
+- `CS0122`: `ItemBase.IsLocalPlayer` in `RealisticArmory`.
+- `CS8752/CS8754`: target-typed `new(...)` with dynamic targets.
+- `CS1503`: a few narrow API signature mismatches.
+
+Do not commit `dependencies/`, game DLLs, dumps, IPs, tokens, or webhook URLs.
+
+---
+
 ### 2026-06-08 (3) 🤝 HANDOFF → следующему агенту (напр. Codex/GPT-5-codex)
 
 **Status**: IN_PROGRESS — плагин компилируется до **12 ошибок** (с 887). Подхвати отсюда.

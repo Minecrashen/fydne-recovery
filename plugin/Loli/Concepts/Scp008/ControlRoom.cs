@@ -219,7 +219,7 @@ namespace Loli.Concepts.Scp008
 
             _audioPlayer?.DestroySelf();
             _audioPlayer = VoiceCore.PlayInIntercom(AudioPathCancel, "SCP-008");
-            Cassie.Lock = false;
+            Qurre.API.Controllers.Cassie.Lock = false;
 
             Cancelled = true;
             Activated = false;
@@ -306,7 +306,7 @@ namespace Loli.Concepts.Scp008
 
                 _audioPlayer?.DestroySelf();
                 _audioPlayer = VoiceCore.PlayInIntercom(AudioPath, "SCP-008");
-                Cassie.Lock = true;
+                Qurre.API.Controllers.Cassie.Lock = true;
 
                 yield return Timing.WaitForSeconds(2f);
 

@@ -4,6 +4,7 @@ using PlayerRoles;
 
 namespace Loli.Scps.Scp294
 {
+#if !FYDNE_SKIP_LEGACY_PATCHES
     [HarmonyPatch(typeof(Scp207), nameof(Scp207.OnEffectsActivated))]
     static class Patch
     {
@@ -19,4 +20,5 @@ namespace Loli.Scps.Scp294
             return !__instance.TryGetDrink(out _);
         }
     }
+#endif
 }

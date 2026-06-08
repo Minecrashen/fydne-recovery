@@ -26,7 +26,7 @@ $src = Get-ChildItem $loli -Recurse -Filter *.cs | ForEach-Object { "`"$($_.Full
 $globals = Join-Path $root "plugin\_PluginGlobals.cs"
 if (Test-Path $globals) { $src += "`"$globals`"" }
 
-$args = @("/nologo","/target:library","/unsafe","/define:NR;TRACE","/langversion:12",
+$args = @("/nologo","/target:library","/unsafe","/define:NR;TRACE;FYDNE_SKIP_LEGACY_PATCHES","/langversion:12",
           "/out:`"$out\Loli.dll`"") + $refs + $src
 $log = Join-Path $out "build.log"
 & $csc $args 2>&1 | Out-File $log -Encoding utf8

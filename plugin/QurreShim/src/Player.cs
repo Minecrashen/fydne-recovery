@@ -36,6 +36,8 @@ namespace Qurre.API.Controllers
 
         public ReferenceHub ReferenceHub => Base.ReferenceHub;
         public UnityEngine.GameObject GameObject => Base.GameObject;
+        public UnityEngine.Transform Transform => Base.GameObject.transform;
+        public UnityEngine.Transform CameraTransform => Base.ReferenceHub.PlayerCameraReference;
         public Mirror.NetworkConnectionToClient ConnectionToClient => Base.ConnectionToClient;
 
         // Под-объекты Qurre (см. PlayerSubObjects.cs)
@@ -45,8 +47,22 @@ namespace Qurre.API.Controllers
         public InventoryW Inventory => new InventoryW(Base);
         public MovementStateW MovementState => new MovementStateW(Base);
         public GamePlayW GamePlay => new GamePlayW(Base);
+        public EffectsW Effects => new EffectsW(Base);
+        public AdministrativeW Administrative => new AdministrativeW(Base);
+        public StatsInformationW StatsInformation => new StatsInformationW(Base);
         public Qurre.API.Classification.Player.Client Client => new Qurre.API.Classification.Player.Client(this);
         public VariablesW Variables => new VariablesW(this);
+        public bool Disconnected => Base.IsOffline;
+        public bool IsHost => Base.IsHost;
+        public int Ping => Base.ReferenceHub.connectionToClient?.rtt is double rtt ? (int)(rtt * 1000) : 0;
+        public System.DateTime JoinedTime { get; set; } = System.DateTime.UtcNow;
+        public System.DateTime SpawnedTime { get; set; } = System.DateTime.UtcNow;
+        public float LastSynced { get; set; }
+        public Mirror.NetworkConnectionToClient Connection => ConnectionToClient;
+        public dynamic AuthManager => null;
+        public void InvokeEscape(bool cuffed = false) { }
+        public void InvokeEscape(PlayerRoles.RoleTypeId newRole) { }
+        public InventorySystem.Items.ItemBase CreateItemInstance(InventorySystem.Items.ItemIdentifier item, bool addToInventory = false) => null;
 
         /// <summary>RA-бейдж (текст тега). Qurre Player.Tag.</summary>
         public string Tag

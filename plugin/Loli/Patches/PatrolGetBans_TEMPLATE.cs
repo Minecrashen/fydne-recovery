@@ -51,6 +51,7 @@ namespace Loli.Patches
     }
 
 
+#if !FYDNE_SKIP_LEGACY_PATCHES
     [HarmonyPatch(typeof(CommandProcessor), nameof(CommandProcessor.CheckPermissions), new Type[] { typeof(CommandSender), typeof(PlayerPermissions) })]
     static class PatrolGetBans_TEMPLATE3
     {
@@ -64,4 +65,5 @@ namespace Loli.Patches
             return false;
         }
     }
+#endif
 }

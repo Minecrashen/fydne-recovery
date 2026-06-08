@@ -7,6 +7,8 @@ using Qurre.API;
 using Qurre.API.Objects;
 using Qurre.API.Controllers;
 using Role = PlayerRoles.RoleTypeId;
+using InventorySystem.Items;
+using InventorySystem.Items.Pickups;
 
 namespace Qurre.Events.Structs
 {
@@ -48,6 +50,26 @@ namespace Qurre.Events.Structs
 
         public Door Door;
         public global::RoundSummary.LeadingTeam Winner;
+        public WorkStation Station;
+        public ItemPickupBase Pickup;
+        public ItemBase Item;
+        public ItemBase NewItem;
+        public ItemBase OldItem;
+        public dynamic Info;
+        public dynamic Inventory;
+        public dynamic Corpse;
+        public dynamic DamageInfo;
+        public dynamic Generator;
+        public dynamic Locker;
+        public dynamic Lift;
+        public dynamic JailbirdBase;
+        public dynamic Setting;
+        public dynamic Chamber;
+        public dynamic Consumption;
+        public dynamic Status;
+        public dynamic State;
+        public LiteDamageTypes LiteType;
+        public DamageTypes DamageType;
     }
 
     // --- Раунд / сервер ---
@@ -59,14 +81,21 @@ namespace Qurre.Events.Structs
     public class JoinEvent : EventBase { }
     public class LeaveEvent : EventBase { }
     public class SpawnEvent : EventBase { }
-    public class ChangeRoleEvent : EventBase { }
+    public class ChangeRoleEvent : EventBase
+    {
+        public RoleInfo OldRole;
+    }
     public class ChangeSpectateEvent : EventBase { }
     public class DeadEvent : EventBase { }
     public class DiesEvent : EventBase { }
     public class EscapeEvent : EventBase { }
     public class KickEvent : EventBase { }
     public class BanEvent : EventBase { public global::BanHandler.BanType Type; public long Duration; public long Expires; }
-    public class BannedEvent : EventBase { public global::BanHandler.BanType Type; }
+    public class BannedEvent : EventBase
+    {
+        public global::BanHandler.BanType Type;
+        public BanDetails Details = new BanDetails();
+    }
     public class CheckWhiteListEvent : EventBase { }
     public class CheckReserveSlotEvent : EventBase { }
 
@@ -132,4 +161,19 @@ namespace Qurre.Events.Structs
     public class Scp079InteractDoorEvent : EventBase { }
     public class Scp049RaisingStartEvent : EventBase { }
     public class Scp049RaisingEndEvent : EventBase { }
+
+    public class RoleInfo
+    {
+        public Role RoleTypeId;
+        public static implicit operator RoleInfo(Role role) => new RoleInfo { RoleTypeId = role };
+    }
+
+    public class BanDetails
+    {
+        public string Id = "";
+        public string OriginalName = "";
+        public long Expires;
+        public string Issuer = "";
+        public string Reason = "";
+    }
 }

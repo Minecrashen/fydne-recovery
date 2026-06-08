@@ -4,6 +4,7 @@ using HarmonyLib;
 
 namespace Loli.Patches;
 
+#if !FYDNE_SKIP_LEGACY_PATCHES
 [HarmonyPatch(typeof(DeadmanSwitch), nameof(DeadmanSwitch.OnUpdate))]
 static class DeleteDeadman
 {
@@ -13,3 +14,4 @@ static class DeleteDeadman
         yield return new CodeInstruction(OpCodes.Ret);
     }
 }
+#endif

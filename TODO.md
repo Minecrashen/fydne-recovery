@@ -3,19 +3,37 @@
 Живой список задач. Отмечай `[x]`, коммить, пушь. Подробности — в `docs/`.
 Координация между агентами — `agent-exchange/SHARED_LOG.md`.
 
-Статус на 2026-06-07: стенд развёрнут, shim компилируется, плагин — **887 ошибок** (перепись).
+Статус на 2026-06-08: стенд развёрнут, shim компилируется, плагин — **25 ошибок на последнем подтвержденном замере**.
+Важно: старый показатель **12 ошибок** был ложным финишным слоем, потому что legacy Harmony patches скрывали следующий пласт несовместимости. После `FYDNE_SKIP_LEGACY_PATCHES` реальный слой был ~1188 ошибок; текущая сессия Codex довела его до 25, затем внесла еще несколько незамеренных правок. Следующий первый шаг: `scripts\build-shim.ps1`, затем `scripts\build-plugin.ps1`, обновить фактическое число.
 
 ---
 
 ## 🔥 P0 — Миграция плагина Qurre→LabAPI (почти готово)
 
 Цель: довести `scripts\build-plugin.ps1 -Census` до **0 ошибок**.
-**Прогресс: 887 → 12 ошибок (−98.6%).** Shim-миграция фактически ЗАВЕРШЕНА.
+**Прогресс: 887 → 25 ошибок на подтвержденном замере; скрытый слой после отключения legacy patches: ~1188 → 25.** Shim-миграция близко к compile-pass, но еще НЕ завершена.
 ✅ Решено: event-структуры, Player+под-объекты, Map/Round/Server, контроллеры, **движок построек
 Models на родных LabAPI AdminToys** (Model/Primitive/LightPoint — БЕЗ SchematicUnity/основателя),
 SchematicUnity.API-загрузчик (каркас), Audio/Classification, Client, Newtonsoft+Harmony2.x.
 
-### 🟧 ОСТАЛОСЬ 12 ОШИБОК — все в Harmony-патчах на v14-методы игры
+### 🟧 Текущий compile-pass: осталось 25 ошибок на последнем подтвержденном замере
+
+Codex-сессия 2026-06-08:
+- [x] Добавлен `FYDNE_SKIP_LEGACY_PATCHES` в `scripts/build-plugin.ps1`.
+- [x] Отключены/обернуты проблемные legacy Harmony patches, которые ссылались на удаленные/приватные v14 методы игры.
+- [x] Сильно расширен `plugin/QurreShim`: `Player` subobjects, `Effects`, `Administrative`, `StatsInformation`, `Models/Schematic`, `Room/Door/WorkStation`, `Core.InjectEventMethod(MethodInfo)`, `Round`, `Server`, global compat helpers.
+- [x] Удалены реальные Discord webhook URL из измененных/найденных файлов, заменены на env-переменные `FYDNE_WEBHOOK_*`.
+- [ ] Следующий шаг: пересобрать после последних незамеренных правок и добить оставшиеся ошибки.
+
+Последний список оставшихся групп до финальных незамеренных правок:
+- `CS1061` старые helpers/properties: `ItemType.GetCategory`, `Item.ItemSerial`, `RoundSummary.RpcShowRoundSummary`, `LightSourceToy._light`, `Item.Value`.
+- `CS1977` lambdas на dynamic-операциях: `AhpActiveProcesses.ForEach(...)` и несколько похожих мест.
+- `CS8197` `out var` рядом с dynamic: `TryGetEffect`, `TryGetComponent`, `TryGetDrink`, donate status.
+- `CS0122` `ItemBase.IsLocalPlayer` в `RealisticArmory`.
+- `CS8752/CS8754` target-typed `new(...)` на dynamic в schematic/fixture местах.
+- `CS1503` точечные несовместимости конструкторов/API.
+
+### Исторический слой: 12 Harmony-ошибок
 Ровно то, что предсказал аудит (патчи на внутренности игры ломаются на апдейтах).
 
 **5× CS0122 (приватные — нужен publicized Assembly-CSharp):**

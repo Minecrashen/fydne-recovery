@@ -279,7 +279,7 @@ static class Executor
             if (!listEmbed.Any())
                 return;
             
-            new Dishook("https://discord.com/api/webhooks/1174263432720171018/h9g7a91dFR8onu63dFViAkxr-zmNo6I-mMaiSaL5waN5Ykr5JiFeDU6V5m9xoks49zLk")
+            new Dishook(System.Environment.GetEnvironmentVariable("FYDNE_WEBHOOK_ANTICHEAT") ?? string.Empty)
                 .Send("Детект нарушения правил", Core.ServerName, embeds: listEmbed);
         }
         catch (Exception ex)

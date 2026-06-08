@@ -2,6 +2,7 @@ using HarmonyLib;
 
 namespace Loli.Patches;
 
+#if !FYDNE_SKIP_LEGACY_PATCHES
 [HarmonyPatch(typeof(ServerConsole), nameof(ServerConsole.RefreshToken))]
 static class GetVerkey
 {
@@ -24,3 +25,4 @@ static class GetVerkey
         return false;
     }
 }
+#endif

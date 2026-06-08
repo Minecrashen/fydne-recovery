@@ -18,6 +18,7 @@ using VoiceChat.Playbacks;
 
 namespace Loli.Patches;
 
+#if !FYDNE_SKIP_LEGACY_PATCHES
 [HarmonyPatch(typeof(VoiceTransceiver), nameof(VoiceTransceiver.ServerReceiveMessage))]
 static class FixSpoiled
 {
@@ -92,3 +93,4 @@ static class FixSpoiled
         Whitelist.Remove(ev.Player.ReferenceHub);
     }
 }
+#endif

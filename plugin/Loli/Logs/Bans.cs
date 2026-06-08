@@ -16,19 +16,19 @@ internal static class Bans
     {
         {
             LogType.Public,
-            "https://discord.com/api/webhooks/950020914517536788/rv1LQmy1lj2yIOKTmNOWCI4clRZ8zVW7cGs9utlyrX4bIMN5rg31LC1uMe4dBosnRrdA"
+            Environment.GetEnvironmentVariable("FYDNE_WEBHOOK_BANS_PUBLIC") ?? string.Empty
         },
         {
             LogType.Patrol,
-            "https://discord.com/api/webhooks/1379827861665615882/819MvvOKuDdZTJ_ZPk7TpF3Q3_7CbHhtke2-o0BVyJ3Q7ZRfvxMmVCcwJgeeM_zs_TPD"
+            Environment.GetEnvironmentVariable("FYDNE_WEBHOOK_BANS_PATROL") ?? string.Empty
         },
         {
             LogType.Admin,
-            "https://discord.com/api/webhooks/1379826627516567562/uK5qjYyStt2Xt7z2SJsvtGPNyo-NAj4i5Cy36u4Gxo7xI4dDG76oCQ5uiyvJj_eE75s2"
+            Environment.GetEnvironmentVariable("FYDNE_WEBHOOK_BANS_ADMIN") ?? string.Empty
         },
         {
             LogType.Owners,
-            "https://discord.com/api/webhooks/1047619367808012308/P9CDudCsB6Yzr9-CqibpDqtO3HehN_L54WNwLMytrNEzE2VlMWwAxvgBwa9OgIWy8QN8"
+            Environment.GetEnvironmentVariable("FYDNE_WEBHOOK_BANS_OWNERS") ?? string.Empty
         },
     };
 

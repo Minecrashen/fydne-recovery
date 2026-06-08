@@ -269,7 +269,7 @@ namespace Loli
 
         static void RefreshTag(ServerRoles sr)
         {
-            string color = sr._myColor;
+            string color = sr.Network_myColor;
             sr.NetworkGlobalBadge = null;
             sr.NetworkGlobalBadgeSignature = null;
             sr.HiddenBadge = null;

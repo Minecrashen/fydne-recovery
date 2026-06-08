@@ -215,7 +215,7 @@ namespace Loli.Concepts.NuclearAttack
             int roundId = Round.CurrentRound;
 
             VoiceCore.PlayInIntercom(AudioPath, "Атака КСИР");
-            Cassie.Lock = true;
+            Qurre.API.Controllers.Cassie.Lock = true;
 
             Timing.RunCoroutine(Process());
 

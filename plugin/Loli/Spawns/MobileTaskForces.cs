@@ -200,9 +200,8 @@ namespace Loli.Spawns
                     string unit = "";
                     do
                     {
-                        string code = Respawning.NamingRules.NineTailedFoxNamingRule.PossibleCodes[
-                            UnityEngine.Random.Range(0, Respawning.NamingRules.NineTailedFoxNamingRule.PossibleCodes.Length - 1)
-                            ];
+                        string[] possibleCodes = ["Alpha", "Beta", "Gamma", "Delta", "Epsilon", "Eta", "Theta", "Iota", "Kappa", "Lambda"];
+                        string code = possibleCodes[UnityEngine.Random.Range(0, possibleCodes.Length - 1)];
                         int number = UnityEngine.Random.Range(1, 19);
                         unit = $"{code}-{number}";
                     }

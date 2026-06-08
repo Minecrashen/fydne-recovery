@@ -49,6 +49,7 @@ namespace Loli.Patches
 #endif
 
 
+#if !FYDNE_SKIP_LEGACY_PATCHES
     [HarmonyPatch(typeof(Scp3114Strangle), nameof(Scp3114Strangle.ServerUpdateTarget))]
     static class FixSkeletonUpdate
     {
@@ -70,6 +71,7 @@ namespace Loli.Patches
             instance.ServerSendRpc(true);
         }
     }
+#endif
 
 
     [HarmonyPatch(typeof(CandyPink), nameof(CandyPink.ServerApplyEffects))]

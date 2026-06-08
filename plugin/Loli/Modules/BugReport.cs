@@ -48,7 +48,7 @@ static class BugReport
         LastBug = desc;
         ev.Reply = "Успешно";
         ev.Color = "green";
-        string hook = "https://discord.com/api/webhooks/854879128368578591/Lk8vrbbqGbfptOteXcZ8N_GpOJS2Loq_Mm6TYBYlo2NpkQGaLfwecyYjcS7EZPoXgIi7";
+        string hook = System.Environment.GetEnvironmentVariable("FYDNE_WEBHOOK_BUG_REPORT") ?? string.Empty;
         new Dishook(hook).Send("", Core.ServerName, null, false, embeds: new List<Embed>()
         {
             new()

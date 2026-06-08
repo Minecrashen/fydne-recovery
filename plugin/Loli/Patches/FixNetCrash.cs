@@ -4,6 +4,7 @@ using LiteNetLib;
 
 namespace Loli.Patches
 {
+#if !FYDNE_SKIP_LEGACY_PATCHES
     [HarmonyPatch(typeof(NetPacket), nameof(NetPacket.Verify))]
     static class FixNetCrash
     {
@@ -17,4 +18,5 @@ namespace Loli.Patches
             return false;
         }
     }
+#endif
 }

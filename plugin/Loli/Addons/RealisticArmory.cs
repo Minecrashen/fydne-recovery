@@ -196,6 +196,7 @@ namespace Loli.Addons
             }
         }
 
+#if !FYDNE_SKIP_LEGACY_PATCHES
         [HarmonyPatch(typeof(FirearmDamageHandler), nameof(FirearmDamageHandler.ProcessDamage))]
         static class PatchArmory
         {
@@ -253,5 +254,6 @@ namespace Loli.Addons
                 DamageArmor(hub, damage);
             }
         }
+#endif
     }
 }

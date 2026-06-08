@@ -16,18 +16,27 @@ namespace Qurre.API.Addons.Models
         public List<SObject> Objects => Childrens;
         public List<ModelPrimitive> Primitives = new List<ModelPrimitive>();
 
-        public Model(string name, Vector3 position, Vector3 rotation, Model parent = null)
-            : this(name, position, rotation, Vector3.one, parent) { }
+        public Model(string name, Vector3 position)
+            : this(name, position, Vector3.zero, Vector3.one, null) { }
 
-        public Model(string name, Vector3 position, Vector3 rotation, Vector3 scale, Model parent = null)
+        public Model(string name, Vector3 position, Model root)
+            : this(name, position, Vector3.zero, Vector3.one, root) { }
+
+        public Model(string name, Vector3 position, Vector2 rotation)
+            : this(name, position, new Vector3(rotation.x, rotation.y, 0f), Vector3.one, null) { }
+
+        public Model(string name, Vector3 position, Vector3 rotation, Model root = null)
+            : this(name, position, rotation, Vector3.one, root) { }
+
+        public Model(string name, Vector3 position, Vector3 rotation, Vector3 scale, Model root = null)
         {
             Name = name;
             GameObject = new GameObject(name);
-            if (parent != null)
+            if (root != null)
             {
-                Parent = parent;
-                GameObject.transform.SetParent(parent.GameObject.transform, false);
-                parent.Childrens.Add(this);
+                Parent = root;
+                GameObject.transform.SetParent(root.GameObject.transform, false);
+                root.Childrens.Add(this);
             }
             GameObject.transform.localPosition = position;
             GameObject.transform.localEulerAngles = rotation;
@@ -46,6 +55,8 @@ namespace Qurre.API.Addons.Models
         }
 
         public LightPoint AddPart(LightPoint light) => AddPart<LightPoint>(light);
+        public SObject AddPart(SObject prim) => AddPart<SObject>(prim);
+        public SObject AddPart(SObject prim, bool @static) => AddPart<SObject>(prim, @static);
     }
 
     public class CustomRoom : Model, IAccessConditions
@@ -57,6 +68,7 @@ namespace Qurre.API.Addons.Models
     public class ModelPrimitive : SObject
     {
         public Toys.PrimitiveObjectToy Toy { get; }
+        public override dynamic Base => Toy.Base;
         public PrimitiveType Type { get; }
         public PrimitiveFlags Flags
         {
@@ -77,6 +89,9 @@ namespace Qurre.API.Addons.Models
             parent?.AddPart(this);
         }
 
+        public ModelPrimitive(Model parent, PrimitiveType type, Color color, Vector3 position, Vector3 scale)
+            : this(parent, type, color, position, Vector3.zero, scale, false) { }
+
         public override Color Color { get => Toy.Color; set => Toy.Color = value; }
         public override Vector3 Position { get => Toy.Position; set => Toy.Position = value; }
         public override Vector3 Rotation { get => Toy.Rotation.eulerAngles; set => Toy.Rotation = Quaternion.Euler(value); }
@@ -88,6 +103,7 @@ namespace Qurre.API.Addons.Models
     public class Primitive : SObject
     {
         public Toys.PrimitiveObjectToy Toy { get; }
+        public override dynamic Base => Toy.Base;
         public PrimitiveType Type { get; }
 
         public Primitive(PrimitiveType type, Vector3 position, Color color,
@@ -110,6 +126,9 @@ namespace Qurre.API.Addons.Models
     public class LightPoint : SObject
     {
         public Toys.LightSourceToy Toy { get; }
+        public override dynamic Base => Toy.Base;
+        public override dynamic Light => Toy.Base;
+        public float ShadowStrength { get => Toy.ShadowStrength; set => Toy.ShadowStrength = value; }
 
         public LightPoint(Vector3 position, Color color, float intensity, float range, float shadowStrength = 0f)
         {
@@ -136,5 +155,76 @@ namespace Qurre.API.Addons.Models
         public override Color Color { get => Toy.Color; set => Toy.Color = value; }
         public override Vector3 Position { get => Toy.Position; set => Toy.Position = value; }
         public override void Destroy() { try { Toy.Destroy(); } catch { } base.Destroy(); }
+    }
+
+    public class ModelLight : LightPoint
+    {
+        public ModelLight(Model parent, Color color, Vector3 position, float lightIntensity = 1f, float lightRange = 5f, float shadowStrength = 0f)
+            : base(parent, color, position, lightIntensity, lightRange, shadowStrength) { }
+    }
+
+    public class ModelTarget : SObject
+    {
+        public ModelTarget(Model parent, object prefab, Vector3 position, Vector3 rotation, Vector3 scale)
+        {
+            Name = "Target";
+            GameObject = new GameObject(Name);
+            GameObject.transform.localPosition = position;
+            GameObject.transform.localEulerAngles = rotation;
+            GameObject.transform.localScale = scale;
+            parent?.AddPart(this);
+        }
+    }
+
+    public class ModelWorkStation : SObject
+    {
+        public Qurre.API.Controllers.WorkStation WorkStation { get; }
+        public ModelWorkStation(Model parent, Vector3 position, Vector3 rotation, Vector3 scale)
+        {
+            Name = "WorkStation";
+            GameObject = new GameObject(Name);
+            GameObject.transform.localPosition = position;
+            GameObject.transform.localEulerAngles = rotation;
+            GameObject.transform.localScale = scale;
+            WorkStation = Qurre.API.Controllers.WorkStation.Get(GameObject.transform);
+            parent?.AddPart(this);
+        }
+    }
+
+    public class ModelDoor : SObject
+    {
+        public ModelDoor(Model parent, object prefab, Vector3 position, Vector3 rotation, Vector3 scale)
+        {
+            Name = "Door";
+            GameObject = new GameObject(Name);
+            GameObject.transform.localPosition = position;
+            GameObject.transform.localEulerAngles = rotation;
+            GameObject.transform.localScale = scale;
+            parent?.AddPart(this);
+        }
+    }
+
+    public class ModelPickup : SObject
+    {
+        public PickupData Pickup { get; } = new PickupData();
+
+        public ModelPickup() { }
+
+        public ModelPickup(Model parent, ItemType item, Vector3 position, Vector3 rotation, bool kinematic = true)
+        {
+            Name = item.ToString();
+            GameObject = new GameObject(Name);
+            GameObject.transform.localPosition = position;
+            GameObject.transform.localEulerAngles = rotation;
+            Pickup.ItemType = item;
+            parent?.AddPart(this);
+        }
+
+        public class PickupData
+        {
+            static ushort _next = 1;
+            public ushort Serial { get; set; } = _next++;
+            public ItemType ItemType { get; set; }
+        }
     }
 }
