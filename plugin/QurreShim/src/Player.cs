@@ -5,9 +5,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using Qurre.API;
 using Lab = LabApi.Features.Wrappers;
 
-namespace Qurre.API
+namespace Qurre.API.Controllers
 {
     public partial class Player
     {
@@ -44,7 +45,7 @@ namespace Qurre.API
         public InventoryW Inventory => new InventoryW(Base);
         public MovementStateW MovementState => new MovementStateW(Base);
         public GamePlayW GamePlay => new GamePlayW(Base);
-        public ClientW Client => new ClientW(Base);
+        public Qurre.API.Classification.Player.Client Client => new Qurre.API.Classification.Player.Client(this);
         public VariablesW Variables => new VariablesW(this);
 
         /// <summary>RA-бейдж (текст тега). Qurre Player.Tag.</summary>

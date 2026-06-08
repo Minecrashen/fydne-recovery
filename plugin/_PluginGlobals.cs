@@ -1,5 +1,5 @@
-// Build-time мост для плагина (НЕ часть оригинала): глобальные алиасы там, где Qurre
-// держал типы в namespace, отличном от импортов конкретных файлов плагина.
-// В Qurre класс Player жил в Qurre.API.Controllers; часть файлов импортирует только
-// Qurre.API. Глобальный алиас делает `Player` видимым во всех файлах компиляции.
-global using Player = Qurre.API.Player;
+// Build-time мост для плагина (НЕ часть оригинала). Глобальные алиасы.
+// Player вынесен в Qurre.API.Controllers (как в оригинальном Qurre) — алиас не нужен.
+// Primitive: ControlRoom.cs импортит SchematicUnity.API.Objects, остальные — Qurre.API.Addons.Models;
+// глобальный алиас делает тип видимым везде без правок плагина.
+global using Primitive = Qurre.API.Addons.Models.Primitive;

@@ -86,19 +86,6 @@ namespace Qurre.API
         public Lift Lift => null; // TODO: текущий лифт игрока
     }
 
-    public readonly struct ClientW
-    {
-        readonly Lab.Player p;
-        public ClientW(Lab.Player b) { p = b; }
-        public void Broadcast(string message, ushort duration, bool clearPrevious = false)
-            => p.SendBroadcast(message, duration, global::Broadcast.BroadcastFlags.Normal, clearPrevious);
-        public void Broadcast(ushort duration, string message, bool clearPrevious = false)
-            => p.SendBroadcast(message, duration, global::Broadcast.BroadcastFlags.Normal, clearPrevious);
-        public void SendConsole(string text, string color = "white") => p.SendConsoleMessage(text, color);
-        public void ShowHint(string text, float duration = 5f) => p.SendHint(text, duration);
-        public void Reconnect() => p.Reconnect(0f, false);
-    }
-
     /// <summary>Qurre-хранилище переменных на игрока (нет аналога в LabAPI).</summary>
     public readonly struct VariablesW
     {

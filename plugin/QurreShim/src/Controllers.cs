@@ -43,6 +43,16 @@ namespace Qurre.API.Controllers
         public Vector3 Position => Base != null ? Base.transform.position : Vector3.zero;
     }
 
+    /// <summary>Управляемый бродкаст карты (Qurre MapBroadcast) — можно менять текст на лету.</summary>
+    public class MapBroadcast
+    {
+        public string Text { get; set; } = "";
+        public ushort Duration { get; set; } = 10;
+        public MapBroadcast() { }
+        public MapBroadcast(string text, ushort duration = 10) { Text = text; Duration = duration; }
+        public void Update(string text) => Text = text;
+    }
+
     public static class Cassie
     {
         public static void Send(string words, bool makeHold = true, bool makeNoise = true, bool customAnnouncement = true)

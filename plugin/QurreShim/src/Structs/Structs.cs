@@ -116,7 +116,7 @@ namespace Qurre.Events.Structs
     public class RequestPlayerListCommandEvent : EventBase { }
     public class LocalReportEvent : EventBase { }
     public class CheaterReportEvent : EventBase { }
-    public class MessageEvent : EventBase { }
+    // MessageEvent — у плагина свой (Loli.HintsCore.Utils.MessageEvent), наш не нужен (конфликт имён).
 
     // --- SCP ---
     public class Scp914UpgradePlayerEvent : EventBase { }
