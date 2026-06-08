@@ -156,7 +156,14 @@ namespace Qurre.API
             PlayerHandlers.Cuffing += OnCuffing;
             PlayerHandlers.Uncuffing += OnUncuffing;
             PlayerHandlers.InteractingElevator += OnInteractingElevator;
+            PlayerHandlers.InteractingGenerator += OnInteractingGenerator;
+            PlayerHandlers.ActivatingGenerator += OnActivatingGenerator;
+            PlayerHandlers.ActivatedGenerator += OnActivatedGenerator;
+            PlayerHandlers.DeactivatingGenerator += OnDeactivatingGenerator;
+            PlayerHandlers.UnlockingGenerator += OnUnlockingGenerator;
+            PlayerHandlers.InteractingLocker += OnInteractingLocker;
             PlayerHandlers.TriggeringTesla += OnTriggeringTesla;
+            PlayerHandlers.SpawnedRagdoll += OnSpawnedRagdoll;
             PlayerHandlers.ChangedSpectator += OnChangedSpectator;
             PlayerHandlers.Banning += OnBanning;
             PlayerHandlers.Banned += OnBanned;
@@ -226,7 +233,14 @@ namespace Qurre.API
             PlayerHandlers.Cuffing -= OnCuffing;
             PlayerHandlers.Uncuffing -= OnUncuffing;
             PlayerHandlers.InteractingElevator -= OnInteractingElevator;
+            PlayerHandlers.InteractingGenerator -= OnInteractingGenerator;
+            PlayerHandlers.ActivatingGenerator -= OnActivatingGenerator;
+            PlayerHandlers.ActivatedGenerator -= OnActivatedGenerator;
+            PlayerHandlers.DeactivatingGenerator -= OnDeactivatingGenerator;
+            PlayerHandlers.UnlockingGenerator -= OnUnlockingGenerator;
+            PlayerHandlers.InteractingLocker -= OnInteractingLocker;
             PlayerHandlers.TriggeringTesla -= OnTriggeringTesla;
+            PlayerHandlers.SpawnedRagdoll -= OnSpawnedRagdoll;
             PlayerHandlers.ChangedSpectator -= OnChangedSpectator;
             PlayerHandlers.Banning -= OnBanning;
             PlayerHandlers.Banned -= OnBanned;
@@ -267,6 +281,27 @@ namespace Qurre.API
         }
         static void PushAllowed(dynamic args, EventBase ev) { try { args.IsAllowed = ev.Allowed; } catch { } }
         static float ReadDamage(object handler) { try { return (float)((dynamic)handler).Damage; } catch { return 0f; } }
+        static T Prop<T>(object source, string name, T fallback = default)
+        {
+            if (source == null) return fallback;
+            try
+            {
+                object value = source.GetType().GetProperty(name)?.GetValue(source);
+                if (value is T typed) return typed;
+            }
+            catch { }
+            return fallback;
+        }
+        static void SetProp(object target, string name, object value)
+        {
+            if (target == null) return;
+            try
+            {
+                var prop = target.GetType().GetProperty(name);
+                if (prop?.CanWrite == true) prop.SetValue(target, value);
+            }
+            catch { }
+        }
         static Qurre.API.Objects.EffectType EffectTypeFrom(object effect)
         {
             var name = effect?.GetType().Name;
@@ -351,7 +386,33 @@ namespace Qurre.API
         static void OnCuffing(PArgs.PlayerCuffingEventArgs args) { var ev = Core.Dispatch(new CuffEvent { Player = Q(args.Target), Cuffer = Q(args.Player), Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }
         static void OnUncuffing(PArgs.PlayerUncuffingEventArgs args) { var ev = Core.Dispatch(new UnCuffEvent { Player = Q(args.Target), Cuffer = Q(args.Player), Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }
         static void OnInteractingElevator(PArgs.PlayerInteractingElevatorEventArgs args) { var ev = Core.Dispatch(new InteractLiftEvent { Player = Q(args.Player), Lift = Lift.Get(args.Elevator), Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }
+        static void OnInteractingGenerator(PArgs.PlayerInteractingGeneratorEventArgs args) => DispatchGenerator(args, null, false);
+        static void OnActivatingGenerator(PArgs.PlayerActivatingGeneratorEventArgs args) => DispatchGenerator(args, Qurre.API.Objects.GeneratorStatus.Activate, false);
+        static void OnActivatedGenerator(PArgs.PlayerActivatedGeneratorEventArgs args) => DispatchGenerator(args, Qurre.API.Objects.GeneratorStatus.Activate, true);
+        static void OnDeactivatingGenerator(PArgs.PlayerDeactivatingGeneratorEventArgs args) => DispatchGenerator(args, Qurre.API.Objects.GeneratorStatus.Deactivate, false);
+        static void OnUnlockingGenerator(PArgs.PlayerUnlockingGeneratorEventArgs args) => DispatchGenerator(args, Qurre.API.Objects.GeneratorStatus.Unlock, false);
+        static void OnInteractingLocker(PArgs.PlayerInteractingLockerEventArgs args)
+        {
+            var ev = Core.Dispatch(new InteractLockerEvent
+            {
+                Player = Q(Prop<LabPlayer>(args, "Player")),
+                Locker = Prop<object>(args, "Locker"),
+                Allowed = Prop(args, "IsAllowed", true)
+            });
+            SetProp(args, "IsAllowed", ev.Allowed);
+        }
         static void OnTriggeringTesla(PArgs.PlayerTriggeringTeslaEventArgs args) { var ev = Core.Dispatch(new TriggerTeslaEvent { Player = Q(args.Player), Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }
+        static void OnSpawnedRagdoll(PArgs.PlayerSpawnedRagdollEventArgs args)
+        {
+            var corpse = new Corpse
+            {
+                Owner = Q(args.Player),
+                Position = args.Ragdoll?.Position ?? UnityEngine.Vector3.zero,
+                Rotation = args.Ragdoll?.Rotation ?? UnityEngine.Quaternion.identity,
+                GameObject = args.Ragdoll?.Base?.gameObject
+            };
+            Core.Dispatch(new CorpseSpawnedEvent { Player = Q(args.Player), Corpse = corpse, DamageInfo = args.DamageHandler });
+        }
         static void OnChangedSpectator(PArgs.PlayerChangedSpectatorEventArgs args) => Core.Dispatch(new ChangeSpectateEvent { Player = Q(args.Player), Target = Q(args.NewTarget) });
         static void OnBanning(PArgs.PlayerBanningEventArgs args) { var ev = Core.Dispatch(new BanEvent { Player = Q(args.Player), Issuer = Q(args.Issuer), Reason = args.Reason, Duration = args.Duration, Allowed = args.IsAllowed }); args.Reason = ev.Reason; args.Duration = ev.Duration; args.IsAllowed = ev.Allowed; }
         static void OnBanned(PArgs.PlayerBannedEventArgs args) => Core.Dispatch(new BannedEvent { Player = Q(args.Player), Issuer = Q(args.Issuer), Reason = args.Reason, UserId = args.PlayerId });
@@ -360,6 +421,28 @@ namespace Qurre.API
         static void OnReportingCheater(PArgs.PlayerReportingCheaterEventArgs args) { var ev = Core.Dispatch(new CheaterReportEvent { Player = Q(args.Player), Target = Q(args.Target), Reason = args.Reason, Allowed = args.IsAllowed }); args.Reason = ev.Reason; args.IsAllowed = ev.Allowed; }
         static void OnReportingPlayer(PArgs.PlayerReportingPlayerEventArgs args) { var ev = Core.Dispatch(new LocalReportEvent { Player = Q(args.Player), Target = Q(args.Target), Reason = args.Reason, Allowed = args.IsAllowed }); args.Reason = ev.Reason; args.IsAllowed = ev.Allowed; }
         static void OnUpdatingEffect(PArgs.PlayerEffectUpdatingEventArgs args) { var ev = Core.Dispatch(new EffectEnabledEvent { Player = Q(args.Player), Type = EffectTypeFrom(args.Effect), Intensity = args.Intensity, Duration = args.Duration, Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; args.Intensity = ev.Intensity; args.Duration = ev.Duration; }
+
+        static void DispatchGenerator(object args, Qurre.API.Objects.GeneratorStatus? status, bool activated)
+        {
+            var ev = Core.Dispatch(new InteractGeneratorEvent
+            {
+                Player = Q(Prop<LabPlayer>(args, "Player")),
+                Generator = Prop<object>(args, "Generator"),
+                Status = status,
+                Allowed = Prop(args, "IsAllowed", true)
+            });
+            SetProp(args, "IsAllowed", ev.Allowed);
+
+            if (activated)
+            {
+                Core.Dispatch(new ActivateGeneratorEvent
+                {
+                    Player = ev.Player,
+                    Generator = ev.Generator,
+                    Status = status
+                });
+            }
+        }
 
         static void OnWarheadStarting(WArgs.WarheadStartingEventArgs args) { var ev = Core.Dispatch(new AlphaStartEvent { Player = Q(args.Player), Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }
         static void OnWarheadStarted(WArgs.WarheadStartedEventArgs args) => Core.Dispatch(new AlphaStartEvent { Player = Q(args.Player) });
