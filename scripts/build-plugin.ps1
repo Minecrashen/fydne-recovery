@@ -22,6 +22,9 @@ $refs = Get-ChildItem $deps -Filter *.dll | Where-Object {
 $refs += "/r:`"$shim`""
 
 $src = Get-ChildItem $loli -Recurse -Filter *.cs | ForEach-Object { "`"$($_.FullName)`"" }
+# build-time мост (глобальные алиасы Qurre)
+$globals = Join-Path $root "plugin\_PluginGlobals.cs"
+if (Test-Path $globals) { $src += "`"$globals`"" }
 
 $args = @("/nologo","/target:library","/unsafe","/define:NR;TRACE","/langversion:12",
           "/out:`"$out\Loli.dll`"") + $refs + $src

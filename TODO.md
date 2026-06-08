@@ -10,6 +10,17 @@
 ## 🔥 P0 — Миграция плагина Qurre→LabAPI (текущий фокус)
 
 Цель: довести `scripts\build-plugin.ps1 -Census` до **0 ошибок**.
+**Прогресс: 887 → 117 ошибок (−87%).** Остаток сконцентрирован в ОДНОЙ подсистеме (см. ниже).
+
+### 🔴 ГЛАВНЫЙ ОСТАВШИЙСЯ БЛОКЕР — схематик/постройки (Builds/)
+~100 из 117 ошибок — это подсистема кастомных построек: `Qurre.API.Addons.Models`
+(`Model` 416×, `ModelPrimitive` 275×, `Primitive` 125×, `PrimitiveParams`, `SObject`, `Scheme`)
++ внешняя `SchematicUnity.API` (`SchematicManager`). Варианты:
+- [ ] (A) Получить у основателя оригинальную **`SchematicUnity.dll`** (с namespace `.API`) +
+      реализовать `Qurre.API.Addons.Models` — faithful.
+- [ ] (B) **Временно исключить `Builds/`** из сборки → получить загружаемое ЯДРО плагина
+      быстрее (постройки — фича, не core-геймплей), вернуть схематик позже.
+- [ ] Аудио-аддон `Qurre.API.Addons.Audio` (`AudioPlayerBot`) — отдельный модуль.
 
 ### Event-структуры + обвязка (784× CS0246 — главный массив)
 - [ ] Создать ~70 event-структур в `plugin/QurreShim/src/Structs/` (поля — по использованию в плагине)

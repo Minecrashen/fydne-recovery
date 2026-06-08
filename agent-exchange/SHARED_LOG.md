@@ -76,6 +76,25 @@ plugin/QurreShim  — shim Qurre→LabAPI (компилируется)
 
 ## 📝 LOG ENTRIES
 
+### 2026-06-08 🔄 IN_PROGRESS — Agent: Claude Code (Opus)
+
+**Status**: IN_PROGRESS
+**Files Changed**: `plugin/QurreShim/src/*` (Structs, QurreEnums, World.Map, Controllers Cassie/Tesla/WorkStation, JsonConfig, _PluginGlobals), `scripts/build-plugin.ps1`, `dependencies/` (Newtonsoft.Json 13.0.3 + Harmony 2.3.3)
+**Related To**: миграция плагина — event-структуры + обёртки + фикс референсов
+
+- **Плагин: 887 → 117 ошибок (−87%)** за сессию.
+- Создан весь event-слой: `EventBase` + 66 классов-событий + Qurre-энумы (EffectType/DamageTypes/LiteDamageTypes).
+- 🔧 FIX: подцепил недостающие референсы — `Newtonsoft.Json` 13.0.3 (игра не везёт) и
+  заменил старый `0Harmony` 1.x на **Harmony 2.3.3** (namespace `HarmonyLib`). Это сняло ~490 ошибок.
+- Обёртки: `World.Map`, `Cassie`(→Announcer), `Tesla`, `WorkStation`, `JsonConfig`, `List.TryFind`.
+- 📌 INFO: в Qurre класс `Player` лежит в `Qurre.API.Controllers` — решено через build-time
+  `global using Player` (`plugin/_PluginGlobals.cs`), без правок плагина.
+- 🔴 BLOCKER: оставшиеся ~100 ошибок = подсистема **схематик/постройки** (`Qurre.API.Addons.Models`
+  + `SchematicUnity.API`). Нужна оригинальная `SchematicUnity.dll` ИЛИ временно исключить `Builds/`.
+  См. TODO P0.
+
+---
+
 ### 2026-06-07 ✅ DONE — Agent: Claude Code (Opus), session 2026-06-07
 
 **Status**: IN_PROGRESS (миграция продолжается)
