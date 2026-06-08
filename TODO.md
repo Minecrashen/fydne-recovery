@@ -87,11 +87,12 @@ Codex-сессия 2026-06-08:
   `DamageDoor/LockDoor/CreatePickup/LczDecontamination/TriggerTesla/AlphaWarhead`.
 - [x] Пачка 7b (generator/locker/corpse partial): reflection-safe bridge для
   `InteractGenerator/ActivateGenerator`, `InteractLocker`, `CorpseSpawned`.
-- [x] Пачка 8a (эффекты partial): `EffectEnabled` через LabAPI `UpdatingEffect`.
+- [x] Пачка 8a (эффекты): `EffectEnabled` через LabAPI `UpdatingEffect`, `EffectDisabled`
+  через `UpdatingEffect/UpdatedEffect` при `Intensity == 0`.
 - [x] Пачка 4b: `UsedItem/UseItem/UsingRadio` с реальным player/item/radio payload.
 - [ ] Пачка 6b: runtime-проверка reply/permission semantics для RA/client/server console.
 - [ ] Пачка 7c: workstation, полный generator payload/status semantics, полноценный locker/Tesla/corpse payload.
-- [ ] Пачка 8b: `EffectDisabled`/effect type mapping без эвристики по имени класса.
+- [ ] Пачка 8b: effect type mapping без эвристики по имени класса.
 
 ### Обёртки/контроллеры
 - [ ] `Map` (Rooms/Doors/… как `List<T>` + extension `TryFind`/`Find`)

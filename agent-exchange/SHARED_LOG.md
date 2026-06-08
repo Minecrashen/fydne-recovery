@@ -17,7 +17,7 @@
 - **Стратегический (не-техн.):** возврат старой аудитории невозможен без **дампа MongoDB** —
   он только у основателя. «Без баз» решено стартовать с нуля (см. DECISION 2026-06-07).
 - **Runtime не проверен:** `Qurre.dll` и `Loli.dll` собираются, но ещё не загружались на живой SCP:SL/LabAPI сервер.
-- **Event bridge частичный:** workstation and exact generator/locker/corpse/Tesla semantics
+- **Event bridge частичный:** workstation, exact effect type mapping, and exact generator/locker/corpse/Tesla semantics
   и часть map/SCP payload ещё требуют отдельного bridge-pass.
 - **Железо:** французская `vm.nano` 2 vCore / 2 GB RAM годится только для лёгкого теста/ностальгического mini-сервера;
   полный публичный стек с несколькими SCP:SL инстансами и Mongo туда не помещается.
@@ -100,12 +100,12 @@ Changed:
   cuffs; ban/kick/reports/RA-list; RA/client/server-console command split with reply propagation;
   pickup creation/decon/door damage/door lock/cancellable open-door; reflection-safe generator/locker/corpse bridge;
   warhead start/stop/detonate;
-  Scp914/173/096/079/049/106 partial events; effect updating.
+  Scp914/173/096/079/049/106 partial events; effect enabled/disabled via intensity updates.
 
 Known deferred bridge gaps:
 - `UsedItem`, `UseItem`, and `UsingRadio` are now wired after raw metadata probing exposed `UsableItem`, `RadioItem`, and `Drain`.
 - Command reply/permission semantics still need runtime verification on RA, client console, and server console.
-- Workstation, exact generator/locker/corpse semantics, full Tesla payload, and full effect disabled/type mapping are still pending.
+- Workstation, exact generator/locker/corpse semantics, full Tesla payload, and exact effect type mapping are still pending.
 
 Next runtime step:
 1. Put `Qurre.dll` and `Loli.dll` in the same LabAPI plugin directory.

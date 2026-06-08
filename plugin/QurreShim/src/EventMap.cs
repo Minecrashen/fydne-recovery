@@ -175,6 +175,7 @@ namespace Qurre.API
             PlayerHandlers.ReportingCheater += OnReportingCheater;
             PlayerHandlers.ReportingPlayer += OnReportingPlayer;
             PlayerHandlers.UpdatingEffect += OnUpdatingEffect;
+            PlayerHandlers.UpdatedEffect += OnUpdatedEffect;
 
             WarheadHandlers.Starting += OnWarheadStarting;
             WarheadHandlers.Started += OnWarheadStarted;
@@ -255,6 +256,7 @@ namespace Qurre.API
             PlayerHandlers.ReportingCheater -= OnReportingCheater;
             PlayerHandlers.ReportingPlayer -= OnReportingPlayer;
             PlayerHandlers.UpdatingEffect -= OnUpdatingEffect;
+            PlayerHandlers.UpdatedEffect -= OnUpdatedEffect;
 
             WarheadHandlers.Starting -= OnWarheadStarting;
             WarheadHandlers.Started -= OnWarheadStarted;
@@ -429,7 +431,26 @@ namespace Qurre.API
         static void OnRequestingRaPlayerList(PArgs.PlayerRequestingRaPlayerListEventArgs args) { var ev = Core.Dispatch(new RequestPlayerListCommandEvent { Player = Q(args.Player), Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }
         static void OnReportingCheater(PArgs.PlayerReportingCheaterEventArgs args) { var ev = Core.Dispatch(new CheaterReportEvent { Player = Q(args.Player), Target = Q(args.Target), Reason = args.Reason, Allowed = args.IsAllowed }); args.Reason = ev.Reason; args.IsAllowed = ev.Allowed; }
         static void OnReportingPlayer(PArgs.PlayerReportingPlayerEventArgs args) { var ev = Core.Dispatch(new LocalReportEvent { Player = Q(args.Player), Target = Q(args.Target), Reason = args.Reason, Allowed = args.IsAllowed }); args.Reason = ev.Reason; args.IsAllowed = ev.Allowed; }
-        static void OnUpdatingEffect(PArgs.PlayerEffectUpdatingEventArgs args) { var ev = Core.Dispatch(new EffectEnabledEvent { Player = Q(args.Player), Type = EffectTypeFrom(args.Effect), Intensity = args.Intensity, Duration = args.Duration, Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; args.Intensity = ev.Intensity; args.Duration = ev.Duration; }
+        static void OnUpdatingEffect(PArgs.PlayerEffectUpdatingEventArgs args)
+        {
+            var type = EffectTypeFrom(args.Effect);
+            if (args.Intensity == 0)
+            {
+                var disabled = Core.Dispatch(new EffectDisabledEvent { Player = Q(args.Player), Type = type, Allowed = args.IsAllowed });
+                args.IsAllowed = disabled.Allowed;
+                return;
+            }
+
+            var enabled = Core.Dispatch(new EffectEnabledEvent { Player = Q(args.Player), Type = type, Intensity = args.Intensity, Duration = args.Duration, Allowed = args.IsAllowed });
+            args.IsAllowed = enabled.Allowed;
+            args.Intensity = enabled.Intensity;
+            args.Duration = enabled.Duration;
+        }
+        static void OnUpdatedEffect(PArgs.PlayerEffectUpdatedEventArgs args)
+        {
+            if (args.Intensity == 0)
+                Core.Dispatch(new EffectDisabledEvent { Player = Q(args.Player), Type = EffectTypeFrom(args.Effect) });
+        }
 
         static void DispatchGenerator(object args, Qurre.API.Objects.GeneratorStatus? status, bool activated)
         {
