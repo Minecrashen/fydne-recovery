@@ -62,7 +62,11 @@ namespace Qurre.API.Controllers
         public dynamic AuthManager => null;
         public void InvokeEscape(bool cuffed = false) { }
         public void InvokeEscape(PlayerRoles.RoleTypeId newRole) { }
-        public InventorySystem.Items.ItemBase CreateItemInstance(InventorySystem.Items.ItemIdentifier item, bool addToInventory = false) => null;
+        public InventorySystem.Items.ItemBase CreateItemInstance(InventorySystem.Items.ItemIdentifier item, bool addToInventory = false)
+        {
+            try { return Base?.ReferenceHub?.inventory?.CreateItemInstance(item, false); }
+            catch { return null; }
+        }
 
         /// <summary>RA-бейдж (текст тега). Qurre Player.Tag.</summary>
         public string Tag

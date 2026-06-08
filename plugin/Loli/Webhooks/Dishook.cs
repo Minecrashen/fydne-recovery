@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -27,7 +28,7 @@ namespace Loli.Webhooks
             };
 
             _httpClient = new HttpClient(handler);
-            _webhookUrl = webhookUrl.Replace("discord.com", "discord.loli-xxx.baby");
+            _webhookUrl = webhookUrl ?? string.Empty;
         }
 
         public Dishook(ulong id, string token) : this($"https://discord.com/api/webhooks/{id}/{token}")
@@ -37,6 +38,9 @@ namespace Loli.Webhooks
         public void Send(string content, string username = null, string avatarUrl = null, bool isTTS = false,
             IEnumerable<Embed> embeds = null)
         {
+            if (string.IsNullOrWhiteSpace(_webhookUrl) || !Uri.IsWellFormedUriString(_webhookUrl, UriKind.Absolute))
+                return;
+
             Content = content;
             Username = username;
             AvatarUrl = avatarUrl;
@@ -47,7 +51,8 @@ namespace Loli.Webhooks
 
             StringContent contentData = new(JsonConvert.SerializeObject(this), Encoding.UTF8, "application/json");
 
-            _httpClient.PostAsync(_webhookUrl, contentData);
+            try { _httpClient.PostAsync(_webhookUrl, contentData); }
+            catch { }
         }
     }
 }

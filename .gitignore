@@ -1,4 +1,4 @@
-# Секреты — НИКОГДА не коммитить
+# Secrets: never commit
 *.key
 *.pem
 *.env
@@ -7,7 +7,7 @@ secrets.*
 config.local.*
 *token*.txt
 
-# Бинарники и зависимости (брать из легальной установки сервера, не хранить в git)
+# Binaries and local dependencies
 *.dll
 *.nupkg
 node_modules/
@@ -15,17 +15,17 @@ packages/
 bin/
 obj/
 
-# Дампы БД (большие, не для git)
+# Database dumps
 *.bson
 *.dump
 *.archive
 dump/
 
-# Рабочие каталоги (клонируются/собираются локально, не в git)
-sources/          # клоны исходных репозиториев (clone-sources.ps1)
-dependencies/     # игровые DLL (gather-dependencies.ps1)
+# Local work directories
+sources/
+dependencies/
 
-# ОС / редакторы
+# OS / editors
 Thumbs.db
 .DS_Store
 .vs/

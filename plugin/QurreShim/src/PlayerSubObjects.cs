@@ -39,8 +39,149 @@ namespace Qurre.API
             => p.SetRole(role, reason, PlayerRoles.RoleSpawnFlags.All);
         public void SetNew(PlayerRoles.RoleTypeId role, PlayerRoles.RoleChangeReason reason, PlayerRoles.RoleSpawnFlags flags)
             => p.SetRole(role, reason, flags);
-        public dynamic Scp079 => null;
-        public dynamic Scp106 => null;
+        public Scp079InformationW Scp079 => new Scp079InformationW(p);
+        public Scp106InformationW Scp106 => new Scp106InformationW(p);
+    }
+
+    public class Scp079InformationW
+    {
+        readonly Lab.Player p;
+        public Scp079InformationW(Lab.Player player) { p = player; }
+        PlayerRoles.PlayableScps.Scp079.Scp079Role Role => p.RoleBase as PlayerRoles.PlayableScps.Scp079.Scp079Role;
+        public bool IsWork => Role != null;
+        public float Energy
+        {
+            get => Aux?.CurrentAux ?? 0f;
+            set { var aux = Aux; if (aux != null) aux.CurrentAux = value; }
+        }
+        public byte Lvl
+        {
+            get => (byte)(Tier?.AccessTierLevel ?? 0);
+            set
+            {
+                var tier = Tier;
+                if (tier == null) return;
+                var thresholds = tier.AbsoluteThresholds;
+                if (thresholds != null && thresholds.Length > 0)
+                {
+                    var index = Math.Max(0, Math.Min(value - 1, thresholds.Length - 1));
+                    tier.TotalExp = thresholds[index];
+                }
+            }
+        }
+        public float MaxEnergy
+        {
+            get
+            {
+                var aux = Aux;
+                var tier = Tier;
+                if (aux == null || tier == null) return 0f;
+                try
+                {
+                    var field = typeof(PlayerRoles.PlayableScps.Scp079.Scp079AuxManager).GetField("_maxPerTier", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public);
+                    if (field?.GetValue(aux) is float[] values && tier.AccessTierIndex >= 0 && tier.AccessTierIndex < values.Length)
+                        return values[tier.AccessTierIndex];
+                }
+                catch { }
+                return aux.MaxAux;
+            }
+            set
+            {
+                var aux = Aux;
+                var tier = Tier;
+                if (aux == null || tier == null) return;
+                try
+                {
+                    var field = typeof(PlayerRoles.PlayableScps.Scp079.Scp079AuxManager).GetField("_maxPerTier", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public);
+                    if (field?.GetValue(aux) is float[] values && tier.AccessTierIndex >= 0 && tier.AccessTierIndex < values.Length)
+                        values[tier.AccessTierIndex] = value;
+                }
+                catch { }
+            }
+        }
+        public int Exp
+        {
+            get => Tier?.TotalExp ?? 0;
+            set { var tier = Tier; if (tier != null) tier.TotalExp = value; }
+        }
+        public Qurre.API.Controllers.Camera Camera
+        {
+            get => Qurre.API.Controllers.Camera.Get(Role?.CurrentCamera);
+            set
+            {
+                var target = value?.Base?.Base;
+                var sync = CameraSync;
+                if (target == null || sync == null) return;
+                try { sync.ClientSwitchTo(target); } catch { }
+            }
+        }
+        public void LostSignal(float duration)
+        {
+            var role = Role;
+            if (role?.SubroutineModule == null) return;
+            try
+            {
+                if (role.SubroutineModule.TryGetSubroutine(out PlayerRoles.PlayableScps.Scp079.Scp079LostSignalHandler lostSignal))
+                    lostSignal.ServerLoseSignal(duration);
+            }
+            catch { }
+        }
+
+        PlayerRoles.PlayableScps.Scp079.Scp079AuxManager Aux
+        {
+            get
+            {
+                var role = Role;
+                if (role?.SubroutineModule != null && role.SubroutineModule.TryGetSubroutine(out PlayerRoles.PlayableScps.Scp079.Scp079AuxManager aux))
+                    return aux;
+                return null;
+            }
+        }
+
+        PlayerRoles.PlayableScps.Scp079.Scp079TierManager Tier
+        {
+            get
+            {
+                var role = Role;
+                if (role?.SubroutineModule != null && role.SubroutineModule.TryGetSubroutine(out PlayerRoles.PlayableScps.Scp079.Scp079TierManager tier))
+                    return tier;
+                return null;
+            }
+        }
+
+        PlayerRoles.PlayableScps.Scp079.Cameras.Scp079CurrentCameraSync CameraSync
+        {
+            get
+            {
+                var role = Role;
+                if (role == null) return null;
+                try
+                {
+                    var field = typeof(PlayerRoles.PlayableScps.Scp079.Scp079Role).GetField("_curCamSync", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                    return field?.GetValue(role) as PlayerRoles.PlayableScps.Scp079.Cameras.Scp079CurrentCameraSync;
+                }
+                catch { return null; }
+            }
+        }
+    }
+
+    public class Scp106InformationW
+    {
+        readonly Lab.Player p;
+        public Scp106InformationW(Lab.Player player) { p = player; }
+        PlayerRoles.PlayableScps.Scp106.Scp106Role Role => p.RoleBase as PlayerRoles.PlayableScps.Scp106.Scp106Role;
+        public bool IsWork => Role != null;
+        public dynamic Attack => Get<PlayerRoles.PlayableScps.Scp106.Scp106Attack>();
+        public dynamic SinkholeController => Get<PlayerRoles.PlayableScps.Scp106.Scp106SinkholeController>();
+        public dynamic StalkAbility => Get<PlayerRoles.PlayableScps.Scp106.Scp106StalkAbility>();
+
+        T Get<T>() where T : PlayerRoles.Subroutines.SubroutineBase
+        {
+            var role = Role;
+            if (role?.SubroutineModule != null && role.SubroutineModule.TryGetSubroutine(out T subroutine))
+                return subroutine;
+            return null;
+        }
     }
 
     public class HealthInformationW
@@ -169,21 +310,51 @@ namespace Qurre.API
     {
         readonly Lab.Player p;
         public EffectsW(Lab.Player b) { p = b; }
-        public EffectControllerW Controller => new EffectControllerW();
-        public void Enable(Qurre.API.Objects.EffectType type, float duration = 0f, bool addDuration = false) { }
-        public void Enable(CustomPlayerEffects.StatusEffectBase effect, float duration = 0f, bool addDuration = false) { }
-        public void Enable<T>(float duration = 0f, bool addDuration = false) where T : CustomPlayerEffects.StatusEffectBase { }
-        public void Disable(Qurre.API.Objects.EffectType type) { }
-        public void Disable<T>() where T : CustomPlayerEffects.StatusEffectBase { }
+        public EffectControllerW Controller => new EffectControllerW(p);
+        public void Enable(Qurre.API.Objects.EffectType type, float duration = 0f, bool addDuration = false)
+        {
+            if (TryGet(type, out CustomPlayerEffects.StatusEffectBase effect))
+                p.EnableEffect(effect, 1, duration, addDuration);
+        }
+        public void Enable(CustomPlayerEffects.StatusEffectBase effect, float duration = 0f, bool addDuration = false)
+        {
+            if (effect != null) p.EnableEffect(effect, 1, duration, addDuration);
+        }
+        public void Enable<T>(float duration = 0f, bool addDuration = false) where T : CustomPlayerEffects.StatusEffectBase
+            => p.EnableEffect<T>(1, duration, addDuration);
+        public void Disable(Qurre.API.Objects.EffectType type)
+        {
+            if (TryGet(type, out CustomPlayerEffects.StatusEffectBase effect))
+                p.DisableEffect(effect);
+        }
+        public void Disable<T>() where T : CustomPlayerEffects.StatusEffectBase => p.DisableEffect<T>();
         public void DisableAll() => p.DisableAllEffects();
-        public bool TryGet(Qurre.API.Objects.EffectType type, out dynamic effect) { effect = null; return false; }
-        public bool TryGet(Qurre.API.Objects.EffectType type, out CustomPlayerEffects.StatusEffectBase effect) { effect = null; return false; }
-        public bool TryGet<T>(out T effect) where T : CustomPlayerEffects.StatusEffectBase { effect = null; return false; }
-        public bool CheckActive(Qurre.API.Objects.EffectType type) => false;
-        public bool CheckActive<T>() where T : CustomPlayerEffects.StatusEffectBase => false;
-        public void SetIntensity(Qurre.API.Objects.EffectType type, byte intensity, float duration = 0f) { }
-        public void SetIntensity<T>(byte intensity, float duration = 0f) where T : CustomPlayerEffects.StatusEffectBase { }
-        public void SetFogType(CustomRendering.FogType type) { }
+        public bool TryGet(Qurre.API.Objects.EffectType type, out dynamic effect)
+        {
+            var ok = TryGet(type, out CustomPlayerEffects.StatusEffectBase typed);
+            effect = typed;
+            return ok;
+        }
+        public bool TryGet(Qurre.API.Objects.EffectType type, out CustomPlayerEffects.StatusEffectBase effect)
+            => p.TryGetEffect(type.ToString(), out effect);
+        public bool TryGet<T>(out T effect) where T : CustomPlayerEffects.StatusEffectBase
+            => p.TryGetEffect(out effect);
+        public bool CheckActive(Qurre.API.Objects.EffectType type)
+            => TryGet(type, out CustomPlayerEffects.StatusEffectBase effect) && effect.IsEnabled;
+        public bool CheckActive<T>() where T : CustomPlayerEffects.StatusEffectBase
+            => p.HasEffect<T>();
+        public void SetIntensity(Qurre.API.Objects.EffectType type, byte intensity, float duration = 0f)
+        {
+            if (TryGet(type, out CustomPlayerEffects.StatusEffectBase effect))
+                p.EnableEffect(effect, intensity, duration, false);
+        }
+        public void SetIntensity<T>(byte intensity, float duration = 0f) where T : CustomPlayerEffects.StatusEffectBase
+            => p.EnableEffect<T>(intensity, duration, false);
+        public void SetFogType(CustomRendering.FogType type)
+        {
+            Enable<CustomPlayerEffects.FogControl>();
+            SetIntensity<CustomPlayerEffects.FogControl>((byte)(type + 1));
+        }
     }
 
     public class AdministrativeW
@@ -198,22 +369,20 @@ namespace Qurre.API
         public ServerRoles ServerRoles => p.ReferenceHub.serverRoles;
         public void RaLogin() { }
         public void RaLogout() { }
-        public void Ban(long duration, string reason = "", string issuer = "") { }
+        public void Ban(long duration, string reason = "", string issuer = "")
+            => p.Ban(string.IsNullOrWhiteSpace(reason) ? "Banned" : reason, duration);
     }
 
     public class EffectControllerW
     {
+        readonly Lab.Player p;
+        public EffectControllerW(Lab.Player player) { p = player; }
+
         public bool TryGetEffect<T>(out T effect) where T : CustomPlayerEffects.StatusEffectBase
-        {
-            effect = null;
-            return false;
-        }
+            => p.TryGetEffect(out effect);
 
         public bool TryGetEffect(string name, out CustomPlayerEffects.StatusEffectBase effect)
-        {
-            effect = null;
-            return false;
-        }
+            => p.TryGetEffect(name, out effect);
 
         public void UseMedicalItem(InventorySystem.Items.ItemBase item) { }
     }

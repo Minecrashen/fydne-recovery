@@ -63,6 +63,7 @@ namespace Qurre.Events.Structs
         public dynamic Generator;
         public dynamic Locker;
         public dynamic Lift;
+        public dynamic Tesla;
         public dynamic JailbirdBase;
         public dynamic Setting;
         public dynamic Chamber;

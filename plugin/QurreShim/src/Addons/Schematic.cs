@@ -27,6 +27,7 @@ namespace SchematicUnity.API.Objects
         public SObject()
         {
             GameObject = new GameObject("SObject");
+            Qurre.API.ShimState.SceneObjects.Add(this);
         }
 
         public SObject(Qurre.API.Addons.Models.Model parent, PrimitiveType type, Color color, Vector3 position,
@@ -63,6 +64,7 @@ namespace SchematicUnity.API.Objects
         {
             foreach (var c in Childrens.ToArray()) c.Destroy();
             Childrens.Clear();
+            Qurre.API.ShimState.SceneObjects.Remove(this);
             if (GameObject != null) Object.Destroy(GameObject);
         }
     }

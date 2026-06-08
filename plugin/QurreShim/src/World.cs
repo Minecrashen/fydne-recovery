@@ -6,6 +6,39 @@ using Qurre.API.Controllers;
 using SchematicUnity.API.Objects;
 using Lab = LabApi.Features.Wrappers;
 
+namespace Qurre.API
+{
+    internal static class ShimState
+    {
+        static readonly Dictionary<ushort, Player> _corpseOwners = new Dictionary<ushort, Player>();
+        internal static readonly HashSet<SObject> SceneObjects = new HashSet<SObject>();
+        internal static readonly HashSet<WorkStation> WorkStations = new HashSet<WorkStation>();
+
+        internal static void TrackCorpse(Lab.Ragdoll ragdoll, Player owner)
+        {
+            if (ragdoll != null) _corpseOwners[ragdoll.Serial] = owner;
+        }
+
+        internal static void UntrackCorpse(Lab.Ragdoll ragdoll)
+        {
+            if (ragdoll != null) _corpseOwners.Remove(ragdoll.Serial);
+        }
+
+        internal static Player CorpseOwner(Lab.Ragdoll ragdoll)
+            => ragdoll != null && _corpseOwners.TryGetValue(ragdoll.Serial, out var owner) ? owner : null;
+
+        internal static void ClearRoundState()
+        {
+            Alpha.Active = false;
+            Alpha.Detonated = false;
+            Decontamination.InProgress = false;
+            _corpseOwners.Clear();
+            SceneObjects.RemoveWhere(x => x == null || x.GameObject == null);
+            WorkStations.RemoveWhere(x => x == null);
+        }
+    }
+}
+
 namespace Qurre.API.World
 {
     public static class Map
@@ -13,8 +46,8 @@ namespace Qurre.API.World
         public static List<Room> Rooms => Lab.Map.Rooms.Select(Room.Get).ToList();
         public static List<Door> Doors => Lab.Map.Doors.Select(Door.Get).ToList();
         public static List<Tesla> Teslas => Lab.Map.Teslas.Select(Tesla.Get).ToList();
-        public static List<Corpse> Corpses => new List<Corpse>();      // TODO: ragdolls
-        public static List<SObject> Primitives => new List<SObject>(); // TODO: schematic primitives
+        public static List<Corpse> Corpses => Lab.Map.Ragdolls.Select(x => new Corpse(x, Qurre.API.ShimState.CorpseOwner(x))).ToList();
+        public static List<SObject> Primitives => Qurre.API.ShimState.SceneObjects.Where(x => x?.GameObject != null).ToList();
 
         public static MapBroadcast Broadcast(string message, ushort duration = 10, bool clearPrevious = false)
         {
@@ -41,7 +74,7 @@ namespace Qurre.API.World
         public static TimeSpan ElapsedTime => Lab.Round.Duration;
 
         // TODO: уточнить семантику при переносе зависимых модулей
-        public static int ActiveGenerators => 0;
+        public static int ActiveGenerators => Lab.Map.Generators.Count(x => x.Engaged);
 
         public static void End() => Lab.Round.End(true);
         public static void Start() { _currentRound++; Lab.Round.Start(); }

@@ -317,8 +317,8 @@ namespace Qurre.API
             return default;
         }
 
-        static void OnWaitingForPlayers() => Core.Dispatch(new RoundWaitingEvent());
-        static void OnRoundStarted() => Core.Dispatch(new RoundStartEvent());
+        static void OnWaitingForPlayers() { Qurre.API.ShimState.ClearRoundState(); Core.Dispatch(new RoundWaitingEvent()); }
+        static void OnRoundStarted() { Qurre.API.ShimState.ClearRoundState(); Core.Dispatch(new RoundStartEvent()); }
         static void OnRoundEnded(SArgs.RoundEndedEventArgs args) => Core.Dispatch(new RoundEndEvent { Winner = args.LeadingTeam });
         static void OnRoundRestarted() => Core.Dispatch(new RoundRestartEvent());
         static void OnRoundStarting(SArgs.RoundStartingEventArgs args) { var ev = Core.Dispatch(new RoundForceStartEvent { Allowed = args.IsAllowed }); PushAllowed(args, ev); }
@@ -358,7 +358,7 @@ namespace Qurre.API
         }
 
         static void OnPickupCreated(SArgs.PickupCreatedEventArgs args) => Core.Dispatch(new CreatePickupEvent { Pickup = args.Pickup?.Base, Position = args.Pickup?.Position ?? UnityEngine.Vector3.zero });
-        static void OnLczDecontaminationStarting(SArgs.LczDecontaminationStartingEventArgs args) { var ev = Core.Dispatch(new LczDecontaminationEvent { Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }
+        static void OnLczDecontaminationStarting(SArgs.LczDecontaminationStartingEventArgs args) { Decontamination.InProgress = true; var ev = Core.Dispatch(new LczDecontaminationEvent { Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }
         static void OnDoorDamaging(SArgs.DoorDamagingEventArgs args) { var ev = Core.Dispatch(new DamageDoorEvent { Door = Door.Get(args.Door), Damage = args.Damage, Allowed = args.IsAllowed }); args.Damage = ev.Damage; args.IsAllowed = ev.Allowed; }
         static void OnDoorLockChanged(SArgs.DoorLockChangedEventArgs args) => Core.Dispatch(new LockDoorEvent { Door = Door.Get(args.Door) });
 
@@ -412,17 +412,13 @@ namespace Qurre.API
             });
             SetProp(args, "IsAllowed", ev.Allowed);
         }
-        static void OnTriggeringTesla(PArgs.PlayerTriggeringTeslaEventArgs args) { var ev = Core.Dispatch(new TriggerTeslaEvent { Player = Q(args.Player), Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }
+        static void OnTriggeringTesla(PArgs.PlayerTriggeringTeslaEventArgs args) { var ev = Core.Dispatch(new TriggerTeslaEvent { Player = Q(args.Player), Tesla = Tesla.Get(args.Tesla), Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }
         static void OnSpawnedRagdoll(PArgs.PlayerSpawnedRagdollEventArgs args)
         {
-            var corpse = new Corpse
-            {
-                Owner = Q(args.Player),
-                Position = args.Ragdoll?.Position ?? UnityEngine.Vector3.zero,
-                Rotation = args.Ragdoll?.Rotation ?? UnityEngine.Quaternion.identity,
-                GameObject = args.Ragdoll?.Base?.gameObject
-            };
-            Core.Dispatch(new CorpseSpawnedEvent { Player = Q(args.Player), Corpse = corpse, DamageInfo = args.DamageHandler });
+            var owner = Q(args.Player);
+            Qurre.API.ShimState.TrackCorpse(args.Ragdoll, owner);
+            var corpse = new Corpse(args.Ragdoll, owner);
+            Core.Dispatch(new CorpseSpawnedEvent { Player = owner, Corpse = corpse, DamageInfo = args.DamageHandler });
         }
         static void OnChangedSpectator(PArgs.PlayerChangedSpectatorEventArgs args) => Core.Dispatch(new ChangeSpectateEvent { Player = Q(args.Player), Target = Q(args.NewTarget) });
         static void OnBanning(PArgs.PlayerBanningEventArgs args) { var ev = Core.Dispatch(new BanEvent { Player = Q(args.Player), Issuer = Q(args.Issuer), Reason = args.Reason, Duration = args.Duration, Allowed = args.IsAllowed }); args.Reason = ev.Reason; args.Duration = ev.Duration; args.IsAllowed = ev.Allowed; }
@@ -463,6 +459,16 @@ namespace Qurre.API
             });
             SetProp(args, "IsAllowed", ev.Allowed);
 
+            if (status.HasValue)
+            {
+                Core.Dispatch(new GeneratorStatusEvent
+                {
+                    Player = ev.Player,
+                    Generator = ev.Generator,
+                    Status = status
+                });
+            }
+
             if (activated)
             {
                 Core.Dispatch(new ActivateGeneratorEvent
@@ -474,12 +480,12 @@ namespace Qurre.API
             }
         }
 
-        static void OnWarheadStarting(WArgs.WarheadStartingEventArgs args) { var ev = Core.Dispatch(new AlphaStartEvent { Player = Q(args.Player), Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }
-        static void OnWarheadStarted(WArgs.WarheadStartedEventArgs args) => Core.Dispatch(new AlphaStartEvent { Player = Q(args.Player) });
-        static void OnWarheadStopping(WArgs.WarheadStoppingEventArgs args) { var ev = Core.Dispatch(new AlphaStopEvent { Player = Q(args.Player), Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }
-        static void OnWarheadStopped(WArgs.WarheadStoppedEventArgs args) => Core.Dispatch(new AlphaStopEvent { Player = Q(args.Player) });
+        static void OnWarheadStarting(WArgs.WarheadStartingEventArgs args) { Alpha.Active = true; var ev = Core.Dispatch(new AlphaStartEvent { Player = Q(args.Player), Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }
+        static void OnWarheadStarted(WArgs.WarheadStartedEventArgs args) { Alpha.Active = true; Core.Dispatch(new AlphaStartEvent { Player = Q(args.Player) }); }
+        static void OnWarheadStopping(WArgs.WarheadStoppingEventArgs args) { var ev = Core.Dispatch(new AlphaStopEvent { Player = Q(args.Player), Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; if (ev.Allowed) Alpha.Active = false; }
+        static void OnWarheadStopped(WArgs.WarheadStoppedEventArgs args) { Alpha.Active = false; Core.Dispatch(new AlphaStopEvent { Player = Q(args.Player) }); }
         static void OnWarheadDetonating(WArgs.WarheadDetonatingEventArgs args) { var ev = Core.Dispatch(new AlphaDetonateEvent { Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }
-        static void OnWarheadDetonated(WArgs.WarheadDetonatedEventArgs args) => Core.Dispatch(new AlphaDetonateEvent());
+        static void OnWarheadDetonated(WArgs.WarheadDetonatedEventArgs args) { Alpha.Detonated = true; Alpha.Active = false; Core.Dispatch(new AlphaDetonateEvent()); }
 
         static void OnScp914ProcessingPlayer(Scp914Args.Scp914ProcessingPlayerEventArgs args) { var ev = Core.Dispatch(new Scp914UpgradePlayerEvent { Player = Q(args.Player), Position = args.NewPosition, Setting = args.KnobSetting, Allowed = args.IsAllowed }); args.NewPosition = ev.Position; args.IsAllowed = ev.Allowed; }
         static void OnScp914ProcessingPickup(Scp914Args.Scp914ProcessingPickupEventArgs args) { var ev = Core.Dispatch(new Scp914UpgradePickupEvent { Pickup = args.Pickup?.Base, Position = args.NewPosition, Setting = args.KnobSetting, Allowed = args.IsAllowed }); args.NewPosition = ev.Position; args.IsAllowed = ev.Allowed; }

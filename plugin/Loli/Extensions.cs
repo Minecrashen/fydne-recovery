@@ -64,6 +64,9 @@ namespace Loli
         static readonly HttpClient HttpClient = new();
         static internal async Task<string> SendApiReq(string path, Dictionary<string, string> queryList)
         {
+            if (string.IsNullOrWhiteSpace(Core.APIUrl))
+                return string.Empty;
+
             string url = $"{Core.APIUrl}/{path}";
             FormUrlEncodedContent content = new(queryList);
 
@@ -455,6 +458,9 @@ namespace Loli
 
         static internal void DownloadAudio(this string url, string path)
         {
+            if (string.IsNullOrWhiteSpace(url) || !Uri.IsWellFormedUriString(url, UriKind.Absolute))
+                return;
+
             var dir = Path.Combine(path, "..");
 
             if (!Directory.Exists(dir))
@@ -465,17 +471,21 @@ namespace Loli
 
             new Thread(() =>
             {
-                WebRequest request = WebRequest.Create(url);
-                WebResponse response = request.GetResponse();
-                Stream responseStream = response.GetResponseStream();
-                Stream fileStream = File.OpenWrite(path);
-                byte[] buffer = new byte[4096];
-                int bytesRead = responseStream.Read(buffer, 0, 4096);
-                while (bytesRead > 0)
+                try
                 {
-                    fileStream.Write(buffer, 0, bytesRead);
-                    bytesRead = responseStream.Read(buffer, 0, 4096);
+                    WebRequest request = WebRequest.Create(url);
+                    WebResponse response = request.GetResponse();
+                    Stream responseStream = response.GetResponseStream();
+                    Stream fileStream = File.OpenWrite(path);
+                    byte[] buffer = new byte[4096];
+                    int bytesRead = responseStream.Read(buffer, 0, 4096);
+                    while (bytesRead > 0)
+                    {
+                        fileStream.Write(buffer, 0, bytesRead);
+                        bytesRead = responseStream.Read(buffer, 0, 4096);
+                    }
                 }
+                catch { }
             }).Start();
         }
     }

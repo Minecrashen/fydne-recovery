@@ -5,10 +5,24 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Interactables.Interobjects.DoorUtils;
+using Qurre.Events.Structs;
 using Lab = LabApi.Features.Wrappers;
 
 namespace Qurre.API.Controllers
 {
+    public class Camera
+    {
+        public Lab.Camera Base { get; }
+        Camera(Lab.Camera b) { Base = b; }
+        public static Camera Get(Lab.Camera b) => b == null ? null : new Camera(b);
+        public static Camera Get(PlayerRoles.PlayableScps.Scp079.Cameras.Scp079Camera b)
+            => b == null ? null : Get(Lab.Camera.Get(b));
+        public Vector3 Position => Base?.Position ?? Vector3.zero;
+        public Quaternion Rotation { get => Base?.Rotation ?? Quaternion.identity; set { if (Base != null) Base.Rotation = value; } }
+        public Room Room => Room.Get(Base?.Room);
+        public GameObject GameObject => Base?.GameObject;
+    }
+
     public class Room
     {
         public Lab.Room Base { get; }
@@ -21,7 +35,7 @@ namespace Qurre.API.Controllers
         public string Name => Base?.Name.ToString() ?? string.Empty;
         public dynamic Type => Base?.Name;
         public List<Door> Doors => Base?.Doors?.Select(Door.Get).ToList() ?? new List<Door>();
-        public dynamic Cameras => Base?.Cameras;
+        public List<Camera> Cameras => Base?.Cameras?.Select(Camera.Get).ToList() ?? new List<Camera>();
         public dynamic NetworkIdentity => Base?.GameObject?.GetComponent<Mirror.NetworkIdentity>();
         public RoomLights Lights { get; } = new RoomLights();
         public void LightsOff(float duration = 10f) { Lights.Enabled = false; }
@@ -88,21 +102,68 @@ namespace Qurre.API.Controllers
 
     public class Corpse
     {
-        public Vector3 Position { get; set; }
-        public Quaternion Rotation { get; set; }
-        public Vector3 Scale { get; set; } = Vector3.one;
+        readonly Lab.Ragdoll _base;
+        Vector3 _position;
+        Quaternion _rotation = Quaternion.identity;
+        Vector3 _scale = Vector3.one;
+        public Vector3 Position
+        {
+            get => _base?.Position ?? _position;
+            set { _position = value; if (_base != null) _base.Position = value; else if (GameObject != null) GameObject.transform.position = value; }
+        }
+        public Quaternion Rotation
+        {
+            get => _base?.Rotation ?? _rotation;
+            set { _rotation = value; if (_base != null) _base.Rotation = value; else if (GameObject != null) GameObject.transform.rotation = value; }
+        }
+        public Vector3 Scale
+        {
+            get => _base?.Scale ?? _scale;
+            set { _scale = value; if (_base != null) _base.Scale = value; else if (GameObject != null) GameObject.transform.localScale = value; }
+        }
         public Player Owner { get; set; }
         public GameObject GameObject { get; set; }
         public Corpse() { }
+        public Corpse(Lab.Ragdoll ragdoll, Player owner = null)
+        {
+            _base = ragdoll;
+            Owner = owner;
+            _position = ragdoll?.Position ?? Vector3.zero;
+            _rotation = ragdoll?.Rotation ?? Quaternion.identity;
+            _scale = ragdoll?.Scale ?? Vector3.one;
+            GameObject = ragdoll?.Base?.gameObject;
+        }
         public Corpse(PlayerRoles.RoleTypeId role, Vector3 position, Quaternion rotation, PlayerStatsSystem.DamageHandlerBase damageHandler, string nickname)
         {
             Position = position;
             Rotation = rotation;
-            GameObject = new GameObject("Corpse");
-            GameObject.transform.position = position;
-            GameObject.transform.rotation = rotation;
+            try
+            {
+                var ragdoll = Lab.Ragdoll.SpawnRagdoll(role, position, rotation, damageHandler, nickname, null, null, null);
+                _base = ragdoll;
+                GameObject = ragdoll?.Base?.gameObject;
+            }
+            catch
+            {
+                GameObject = new GameObject("Corpse");
+                GameObject.transform.position = position;
+                GameObject.transform.rotation = rotation;
+            }
         }
-        public void Destroy() { try { UnityEngine.Object.Destroy(GameObject); } catch { } }
+        public void Destroy()
+        {
+            try
+            {
+                if (_base != null)
+                {
+                    Qurre.API.ShimState.UntrackCorpse(_base);
+                    _base.Destroy();
+                    return;
+                }
+            }
+            catch { }
+            try { UnityEngine.Object.Destroy(GameObject); } catch { }
+        }
     }
 
     public class Locker
@@ -125,17 +186,49 @@ namespace Qurre.API.Controllers
     {
         public Component Base { get; }
         readonly GameObject _gameObject;
-        public WorkStation(Component b) { Base = b; _gameObject = b?.gameObject; }
+        Lab.InteractableToy _toy;
+        public WorkStation(Component b)
+        {
+            Base = b;
+            _gameObject = b?.gameObject;
+            Qurre.API.ShimState.WorkStations.Add(this);
+            EnsureInteractable(b?.transform, Vector3.one);
+        }
         public WorkStation(Vector3 position, Vector3 rotation, Vector3 scale)
         {
             _gameObject = new GameObject("WorkStation");
             _gameObject.transform.position = position;
             _gameObject.transform.eulerAngles = rotation;
             _gameObject.transform.localScale = scale;
+            Qurre.API.ShimState.WorkStations.Add(this);
+            EnsureInteractable(_gameObject.transform, scale);
         }
         public static WorkStation Get(Component b) => b == null ? null : new WorkStation(b);
         public Vector3 Position => Base != null ? Base.transform.position : _gameObject != null ? _gameObject.transform.position : Vector3.zero;
         public dynamic Status { get; set; }
+        public GameObject GameObject => _gameObject;
+
+        void EnsureInteractable(Transform parent, Vector3 scale)
+        {
+            if (_toy != null || parent == null) return;
+            try
+            {
+                _toy = Lab.InteractableToy.Create(Vector3.zero, Quaternion.identity, scale == default ? Vector3.one : scale, parent, true);
+                _toy.Shape = AdminToys.InvisibleInteractableToy.ColliderShape.Box;
+                _toy.InteractionDuration = 0f;
+                _toy.OnSearching += DispatchUpdate;
+                _toy.OnInteracted += DispatchInteract;
+            }
+            catch { }
+        }
+
+        void DispatchUpdate(Lab.Player player)
+        {
+            Core.Dispatch(new WorkStationUpdateEvent { Player = Player.Get(player), Station = this, Allowed = true });
+        }
+
+        void DispatchInteract(Lab.Player player)
+            => Core.Dispatch(new InteractWorkStationEvent { Player = Player.Get(player), Station = this, Allowed = true });
     }
 
     /// <summary>Управляемый бродкаст карты (Qurre MapBroadcast) — можно менять текст на лету.</summary>

@@ -296,3 +296,34 @@ LightSourceToy). Карта событий Qurre→LabAPI — в `EventMap.cs` (
 `build-plugin.ps1 -Census` до нуля.
 
 ---
+
+---
+
+### 2026-06-08 (9) ? QURRE-V2 REFERENCE + EXTERNAL STUBS � Agent: Codex
+
+**Status**: OFFLINE_COMPAT_PASS � `Qurre.dll` and `Loli.dll` still build with **0 compile errors**.
+**Reference Found**: https://github.com/Qurre-sl/Qurre-v2, branch `v3-use-14.1`, Apache-2.0. Cloned locally to `sources/Qurre-v2`; this path is gitignored and must not be committed because it contains dependency DLLs.
+
+Changed:
+- Fixed `.gitignore` so `sources/` and `dependencies/` are really ignored.
+- Added `.env.example` with empty placeholders for FYDNE socket/API/CDN/Steam/Discord/Telegram/moderation variables.
+- Hardened Discord webhooks: invalid/empty URLs are no-op; removed old Discord proxy rewrite.
+- Set `FYDNE_API_URL` and `FYDNE_CDN_URL` fallback to empty, not legacy domains.
+- Guarded API/audio downloads when external URLs are missing.
+- Used Qurre-v2 as behavior reference for shim improvements:
+  - `Scp079.MaxEnergy` get/set via LabAPI/private-field reflection fallback.
+  - `Scp079.LostSignal(float)` calls `Scp079LostSignalHandler.ServerLoseSignal` when available.
+  - `Scp106` wrapper exposes `Attack`, `SinkholeController`, and `StalkAbility` subroutines.
+  - `Effects.SetFogType` maps to `FogControl` intensity like Qurre-v2.
+- Added `scripts/deploy-local-plugin.ps1` for safe local artifact deployment into LabAPI plugin folders.
+
+Verified:
+- `scripts/build-shim.ps1` -> OK, warnings only.
+- `scripts/build-plugin.ps1` -> OK, `0` errors.
+
+Decision:
+- Do not replace the shim with Qurre-v2 directly right now. Qurre-v2 requires its own loader/install path and publicized game assemblies. Use it as the authoritative compatibility reference while keeping the current LabAPI shim path.
+
+Next:
+1. Continue Qurre-v2-guided shim parity for `WorkStation`, `Generator`, `Locker`, `Intercom`, `Respawn`, and audio.
+2. Run first live smoke-test once the user is ready to start a local SCP:SL/LabAPI server.

@@ -22,11 +22,23 @@ public static class Alpha
 
 public static class GlobalLights
 {
-    public static void TurnOff(float duration = 0f) { }
-    public static void ChangeColor(Color color, bool onlyRooms = true) { }
-    public static void ChangeColor(Color color, bool onlyRooms, bool lockChange, bool force) { }
-    public static void SetToDefault() { }
-    public static void SetToDefault(bool onlyRooms, bool force) { }
+    public static void TurnOff(float duration = 0f)
+    {
+        if (duration > 0f) LabApi.Features.Wrappers.Map.TurnOffLights(duration);
+        else LabApi.Features.Wrappers.Map.TurnOffLights();
+    }
+
+    public static void ChangeColor(Color color, bool onlyRooms = true)
+        => LabApi.Features.Wrappers.Map.SetColorOfLights(color);
+
+    public static void ChangeColor(Color color, bool onlyRooms, bool lockChange, bool force)
+        => LabApi.Features.Wrappers.Map.SetColorOfLights(color);
+
+    public static void SetToDefault()
+        => LabApi.Features.Wrappers.Map.ResetColorOfLights();
+
+    public static void SetToDefault(bool onlyRooms, bool force)
+        => LabApi.Features.Wrappers.Map.ResetColorOfLights();
 }
 
 public static class Respawn

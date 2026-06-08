@@ -163,3 +163,20 @@ Codex-сессия 2026-06-08:
 - [x] Каркас диспетчера + точка входа LabAPI
 - [x] Перепись ошибок плагина (887 → план выше)
 - [x] agent-exchange протокол + общий лог
+
+---
+
+## 2026-06-08 Codex pass: Qurre-v2 reference + external stubs
+
+- [x] Cloned Qurre-v2 locally as a reference only: `sources/Qurre-v2` (gitignored). Source: https://github.com/Qurre-sl/Qurre-v2, branch `v3-use-14.1`, Apache-2.0.
+- [x] Confirmed strategy: keep the LabAPI shim. Qurre-v2 is useful as behavior/spec reference, but direct replacement requires its loader/install model and publicized game assemblies.
+- [x] Fixed `.gitignore`: `sources/` and `dependencies/` are now actually ignored without inline comments that break gitignore matching.
+- [x] Added `.env.example` with empty stubs for socket/API/CDN/Steam/Discord/Telegram/AI moderation variables.
+- [x] Hardened Discord webhook sender: empty or invalid webhook URL is now a no-op; old `discord.loli-xxx.baby` rewrite removed.
+- [x] Stubbed external API/CDN defaults: `FYDNE_API_URL` and `FYDNE_CDN_URL` now default to empty strings, not old FYDNE domains.
+- [x] Hardened `SendApiReq` and `DownloadAudio`: missing API/CDN URL no longer triggers real external HTTP requests.
+- [x] Qurre-v2-guided shim improvements: `Scp079.MaxEnergy`, `Scp079.LostSignal`, `Scp106` wrapper, and `Effects.SetFogType` implemented closer to Qurre behavior.
+- [x] Added local deploy helper: `scripts/deploy-local-plugin.ps1` copies built `Qurre.dll` + `Loli.dll` into `%APPDATA%\SCP Secret Laboratory\LabAPI\plugins\global` or a port-specific folder.
+- [x] Verification: `scripts/build-shim.ps1` OK; `scripts/build-plugin.ps1` OK, `0` errors.
+
+Remaining hard gate: live SCP:SL/LabAPI smoke-test. Compile/offline compatibility is materially better, but runtime is still unverified.
