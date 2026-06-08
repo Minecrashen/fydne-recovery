@@ -73,18 +73,35 @@ namespace Qurre.API
                 if (m.GetCustomAttribute<EventsIgnoreAttribute>() != null) continue;
                 foreach (var attr in m.GetCustomAttributes<EventMethodAttribute>())
                 {
+                    if (!m.IsStatic)
+                    {
+                        Log.Error($"Qurre-shim: skipped non-static event handler {t.FullName}.{m.Name}");
+                        continue;
+                    }
+
                     var pars = m.GetParameters();
-                    Type structType = pars.Length == 1 ? pars[0].ParameterType : null;
+                    if (pars.Length > 1)
+                    {
+                        Log.Error($"Qurre-shim: skipped event handler with unsupported signature {t.FullName}.{m.Name}");
+                        continue;
+                    }
+
+                    bool withoutArgs = pars.Length == 0;
+                    Type structType = withoutArgs ? EventMap.EnumToStruct(attr.EventType) : pars[0].ParameterType;
                     if (structType == null || structType == typeof(IBaseEvent))
                         structType = EventMap.EnumToStruct(attr.EventType);
-                    if (structType == null) continue;
+                    if (structType == null || !typeof(IBaseEvent).IsAssignableFrom(structType))
+                    {
+                        Log.Error($"Qurre-shim: skipped event handler with unknown event type {t.FullName}.{m.Name}");
+                        continue;
+                    }
 
                     var method = m;
                     Add(structType, new Entry
                     {
                         Priority = attr.Priority,
                         Key = m,
-                        Invoke = ev => method.Invoke(method.IsStatic ? null : null, new object[] { ev })
+                        Invoke = ev => method.Invoke(null, withoutArgs ? null : new object[] { ev })
                     });
                 }
             }

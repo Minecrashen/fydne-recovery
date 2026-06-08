@@ -74,9 +74,15 @@ namespace Qurre.Events.Structs
     }
 
     // --- Раунд / сервер ---
+    public class RoundWaitingEvent : EventBase { }
+    public class RoundStartEvent : EventBase { }
+    public class RoundEndEvent : EventBase { }
+    public class RoundRestartEvent : EventBase { }
+    public class RoundForceStartEvent : EventBase { }
     public class RoundCheckEvent : EventBase { }
     public class AlphaStartEvent : EventBase { }
     public class AlphaStopEvent : EventBase { }
+    public class AlphaDetonateEvent : EventBase { }
 
     // --- Игрок: жизненный цикл ---
     public class JoinEvent : EventBase { }
@@ -135,6 +141,7 @@ namespace Qurre.Events.Structs
     public class TriggerTeslaEvent : EventBase { }
     public class CreatePickupEvent : EventBase { public new InventorySystem.Inventory Inventory; }
     public class CorpseSpawnedEvent : EventBase { }
+    public class LczDecontaminationEvent : EventBase { }
 
     // --- Наручники ---
     public class CuffEvent : EventBase { }
@@ -157,6 +164,7 @@ namespace Qurre.Events.Structs
     public class Scp106AttackEvent : EventBase { }
     public class Scp096AddTargetEvent : EventBase { }
     public class Scp096SetStateEvent : EventBase { }
+    public class Scp079RecontainEvent : EventBase { }
     public class Scp079NewLvlEvent : EventBase { }
     public class Scp079LockDoorEvent : EventBase { }
     public class Scp079InteractDoorEvent : EventBase { }

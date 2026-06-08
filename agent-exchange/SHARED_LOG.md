@@ -9,16 +9,18 @@
 
 | Agent | Status | Working On |
 |-------|--------|------------|
-| Claude Code (Opus) | 🟢 ACTIVE | Миграция Qurre→LabAPI ПОЧТИ ГОТОВА: плагин 887→**12 ошибок**. Осталось 12 Harmony-патчей на v14 |
+| Codex | 🟢 ACTIVE | Qurre→LabAPI compile-pass закрыт; offline event-bridge pass #1 и bootstrap загрузки Loli.dll сделаны |
 | (другие) | — | — |
 
 ## 🔴 ACTIVE BLOCKERS
 
 - **Стратегический (не-техн.):** возврат старой аудитории невозможен без **дампа MongoDB** —
   он только у основателя. «Без баз» решено стартовать с нуля (см. DECISION 2026-06-07).
-- **Железо:** доступен 1 ГБ — недостаточно для игрового инстанса (нужно 2–4 ГБ/сервер + быстрое ядро).
-- **Публичайзер:** нет `Assembly-CSharp_public.dll` (нет dotnet SDK для tool). 5 ошибок CS0122
-  (protection level) в патчах ждут публичайзинга. Обход — Mono.Cecil-скрипт или ставить SDK.
+- **Runtime не проверен:** `Qurre.dll` и `Loli.dll` собираются, но ещё не загружались на живой SCP:SL/LabAPI сервер.
+- **Event bridge частичный:** `UsedItem/UseItem/UsingRadio`, `GameConsoleCommand`, generator/workstation/locker/corpse
+  и часть map/SCP payload ещё требуют отдельного bridge-pass.
+- **Железо:** французская `vm.nano` 2 vCore / 2 GB RAM годится только для лёгкого теста/ностальгического mini-сервера;
+  полный публичный стек с несколькими SCP:SL инстансами и Mongo туда не помещается.
 
 ---
 
@@ -31,12 +33,14 @@
 - **Окружение развёрнуто** на машине разработчика: сервер SCP:SL (SteamCMD), **147 DLL**,
   **LabApi 1.1.7**, компилятор VS2022/csc. Полная карта API LabApi выгружена в
   `docs/labapi_1.1.7_api_reference.txt`.
-- **Shim компилируется** (`plugin/QurreShim` → `Qurre.dll`, 23 КБ): Log, Server, Round,
-  Player + 8 под-объектов, мин. контроллеры, диспетчер событий (загрузчик/реестр/Inject),
-  точка входа LabAPI `QurreBootstrap`.
-- **Перепись плагина:** `build-plugin.ps1 -Census` → **887 ошибок** (784× CS0246 = отсутствующие
-  event-структуры и типы, 89× CS0234 = под-namespace'ы, 5× CS0122 = публичайзинг). Это и есть
-  карта оставшейся механической работы.
+- **Shim компилируется** (`plugin/QurreShim` → `Qurre.dll`, ~95 КБ): Log, Server, Round,
+  Player + под-объекты, контроллеры, диспетчер событий, LabAPI event bridge #1,
+  sibling DLL loader, точка входа LabAPI `QurreBootstrap`.
+- **Текущее состояние 2026-06-08:** `Qurre.dll` и `Loli.dll` собираются с **0 compile errors**.
+  `QurreBootstrap` грузит соседние DLL, чтобы `Loli.dll` попадал в `AppDomain`; `EventMap` имеет первый
+  реальный LabAPI bridge для round/player/combat/map/warhead/SCP/effect событий.
+- **Перепись плагина:** `scripts/build-plugin.ps1` → **0 compile errors**. Это не runtime-pass:
+  часть shim API ещё является заглушками/эвристикой, а реальная проверка начнётся с загрузки DLL на сервер.
 
 ---
 
@@ -64,17 +68,49 @@ plugin/QurreShim  — shim Qurre→LabAPI (компилируется)
 
 ## 3. Что осталось (кратко — детально в TODO.md)
 
-1. Event-структуры (~70) + обвязка LabAPI в `EventMap.cs` (784 CS0246).
-2. `Map` + полные контроллеры `Room/Door/Lift/Tesla/Cassie/Generator`.
-3. `Player.Effects` + `RoleInformation.Scp*` (SCP-роль API).
-4. Публичайзер `Assembly-CSharp` → закрыть CS0122 в патчах.
-5. `SCPLogs.dll` — заглушить или получить у основателя.
-6. Довести `build-plugin.ps1` до 0 ошибок → собрать плагин.
-7. Бэкенд: поднять Mongo + сервисы (новые секреты).
+1. Runtime smoke-test: загрузить `Qurre.dll` + `Loli.dll` на локальный SCP:SL/LabAPI сервер и собрать первый лог.
+2. Довести event bridge gaps: `UsedItem/UseItem/UsingRadio`, `GameConsoleCommand`, generators/workstation/lockers/corpse/full Tesla/OpenDoor/effects.
+3. Проверить Harmony patches под `FYDNE_SKIP_LEGACY_PATCHES`; включать legacy patches только после отдельной ревизии.
+4. Довести `Map`/`Room`/`Door`/`Lift`/`Tesla`/`Cassie`/`Generator` и `Player.Effects` из scaffolding до реальной семантики.
+5. Бэкенд: стартовать без старой MongoDB, новые секреты через env/config templates.
 
 ---
 
 ## 📝 LOG ENTRIES
+
+### 2026-06-08 (7) ✅ EVENT BRIDGE PASS #1 — Agent: Codex
+
+**Status**: COMPILE_PASS + OFFLINE_EVENT_BRIDGE_PASS — `Qurre.dll` and `Loli.dll` still build with **0 compile errors**.
+**Related To**: Qurre→LabAPI runtime readiness before first SCP:SL smoke test.
+
+Verified commands:
+- `scripts/build-shim.ps1` → OK, warnings only.
+- `scripts/build-plugin.ps1` → OK, `0` errors.
+
+Changed:
+- `plugin/QurreShim/src/Bootstrap.cs`: `QurreBootstrap.Enable()` now loads sibling DLLs from the same folder before `Core.BootstrapAll()`.
+  This is required so a legacy `Loli.dll` placed next to `Qurre.dll` can enter `AppDomain` even though it is not a LabAPI plugin class.
+- `plugin/QurreShim/src/Core.cs`: `[EventMethod]` scanner now supports paramless legacy handlers and single-argument handlers separately,
+  rejects unsupported signatures, and skips non-static event handlers instead of invoking them through a null instance.
+- `plugin/QurreShim/src/Structs/Structs.cs`: added distinct shim event types for round lifecycle, alpha detonation,
+  LCZ decontamination, and SCP-079 recontainment.
+- `plugin/QurreShim/src/EventMap.cs`: filled legacy enum→event type map and added LabAPI subscriptions for:
+  round lifecycle/check/force-start; player join/leave/spawn/role/death/damage; doors; pickup/drop/change item; escape;
+  cuffs; ban/kick/reports/RA-list; pickup creation/decon/door damage/door lock; warhead start/stop/detonate;
+  Scp914/173/096/079/049/106 partial events; effect updating.
+
+Known deferred bridge gaps:
+- `UsedItem`, `UseItem`, and `UsingRadio` are intentionally not wired yet: in LabAPI 1.1.7 the inspected args did not expose
+  enough player/item/radio payload for old FYDNE handlers, and firing empty events would create noisy null-reference runtime errors.
+- `GameConsoleCommand` still needs separation from RA command handling via LabAPI `CommandType`.
+- Generators, workstation, lockers, corpse spawn, full Tesla/OpenDoor payload, and full effect disabled/type mapping are still pending.
+
+Next runtime step:
+1. Put `Qurre.dll` and `Loli.dll` in the same LabAPI plugin directory.
+2. Start a local SCP:SL server with `FYDNE_SKIP_LEGACY_PATCHES` enabled.
+3. Collect first-load logs and fix failures in order: assembly load → `[PluginInit]` lifecycle → event dispatch → Harmony patch errors → join/spawn flow.
+
+---
 
 ### 2026-06-08 (5) ✅ COMPILE PASS — Agent: Codex
 

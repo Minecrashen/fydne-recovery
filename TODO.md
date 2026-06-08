@@ -28,6 +28,18 @@ Codex-сессия 2026-06-08:
   typed `CreatePickupEvent.Inventory`, `ItemType.GetCategory`, `Inventory.Items` compat wrapper, `EffectControllerW`,
   `RoundSummary.RpcShowRoundSummary` stub, `DoorVariant` as `GameObject`, `Corpse.Scale/Owner`, `ItemSerial()` helper,
   `RealisticArmory` private `IsLocalPlayer` guard under `FYDNE_SKIP_LEGACY_PATCHES`.
+- [x] Первый offline runtime-pass по загрузке и событиям:
+  `QurreBootstrap` теперь грузит соседние DLL из папки `Qurre.dll` перед сканированием, чтобы `Loli.dll`
+  попадал в `AppDomain`; `Core` корректно регистрирует `[EventMethod]` без параметров и с одним параметром.
+- [x] `EventMap.PopulateEnumMap()` заполнен для всех legacy enum Qurre; добавлены отдельные shim-типы
+  `RoundWaitingEvent/RoundStartEvent/RoundEndEvent/RoundRestartEvent/RoundForceStartEvent`,
+  `AlphaDetonateEvent`, `LczDecontaminationEvent`, `Scp079RecontainEvent`.
+- [x] `EventMap.WireLabApi()` частично реализован: round lifecycle/check/force-start, player join/leave/spawn/role/death/damage,
+  doors, pickup/drop/change item, escape, cuffs, ban/kick/reports/RA-list, map pickup/decon/door damage/lock,
+  alpha warhead, Scp914/173/096/079/049/106 и effect updating.
+- [ ] Не считать runtime готовым: `UsedItem/UseItem/UsingRadio` пока НЕ подключены к LabAPI, потому что в текущей
+  LabAPI 1.1.7 сигнатуре не найден полезный payload для старых FYDNE-хендлеров; `GameConsoleCommand` отдельно
+  не разведён; generator/workstation/locker/corpse и часть SCP/map событий требуют следующего bridge-pass.
 - [ ] Следующий шаг: runtime smoke-test на локальном SCP:SL/LabAPI сервере.
 
 ### Исторический слой: 12 Harmony-ошибок
@@ -58,18 +70,21 @@ Codex-сессия 2026-06-08:
 
 ✅ NineTailedFoxAnnouncer-патч уже отключён (тип удалён игрой в v14, Cassie→Announcer).
 
-### Event-структуры + обвязка (784× CS0246 — главный массив)
-- [ ] Создать ~70 event-структур в `plugin/QurreShim/src/Structs/` (поля — по использованию в плагине)
-- [ ] Наполнить `EventMap.PopulateEnumMap()` (enum → тип структуры)
-- [ ] Наполнить `EventMap.WireLabApi()` — подписка на события LabAPI + трансляция в структуры
-- [ ] Пачка 1 (раунд): `RoundEvents.Waiting/Start/End/Restart` → ServerEvents LabAPI
-- [ ] Пачка 2 (игрок-жизнь): `Join/Leave/Spawn/ChangeRole/Dead/Dies` (самые частые)
-- [ ] Пачка 3 (бой): `Damage/Attack` → `PlayerEvents.Hurting`
-- [ ] Пачка 4 (двери/предметы/эскейп): `InteractDoor/PickupItem/Escape/UsedItem/ChangeItem`
-- [ ] Пачка 5 (SCP): `Scp914/Scp173/Scp096/Scp079/Scp106` события
-- [ ] Пачка 6 (сервер/админ): `RemoteAdminCommand/GameConsoleCommand/репорты`
-- [ ] Пачка 7 (карта/варх): `OpenDoor/DamageDoor/TriggerTesla/CreatePickup/AlphaWarhead`
-- [ ] Пачка 8 (эффекты): `EffectEnabled/EffectDisabled`
+### Event-структуры + обвязка (compile закрыт, runtime bridge частичный)
+- [x] Создать event-структуры, необходимые для compile-pass и enum bridge.
+- [x] Наполнить `EventMap.PopulateEnumMap()` (legacy enum → shim-структура).
+- [x] Пачка 1 (раунд): `RoundEvents.Waiting/Start/End/Restart/Check/ForceStart` → ServerEvents LabAPI.
+- [x] Пачка 2 (игрок-жизнь): `Join/Leave/Spawn/ChangeRole/Dead/Dies`.
+- [x] Пачка 3 (бой): `Damage/Attack` → `Hurting/Hurt/Dying/Death`.
+- [x] Пачка 4a (двери/пикапы/дроп/эскейп): `InteractDoor/PickupItem/PrePickupItem/DropItem/DroppedItem/DropAmmo/ChangeItem/Escape`.
+- [x] Пачка 5a (SCP partial): `Scp914/Scp173/Scp096/Scp079/Scp049/Scp106` основные события.
+- [x] Пачка 6a (админ partial): `RemoteAdminCommand`, RA-list, ban/kick/reports.
+- [x] Пачка 7a (карта/варх partial): `DamageDoor/LockDoor/CreatePickup/LczDecontamination/TriggerTesla/AlphaWarhead`.
+- [x] Пачка 8a (эффекты partial): `EffectEnabled` через LabAPI `UpdatingEffect`.
+- [ ] Пачка 4b: `UsedItem/UseItem/UsingRadio` с реальным player/item/radio payload.
+- [ ] Пачка 6b: разделить `GameConsoleCommand` и `RemoteAdminCommand` по `CommandType`, корректно прокидывать reply.
+- [ ] Пачка 7b: `OpenDoor`, workstation, generators, lockers, corpse spawn, полноценный Tesla payload.
+- [ ] Пачка 8b: `EffectDisabled`/effect type mapping без эвристики по имени класса.
 
 ### Обёртки/контроллеры
 - [ ] `Map` (Rooms/Doors/… как `List<T>` + extension `TryFind`/`Find`)
