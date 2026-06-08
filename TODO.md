@@ -20,6 +20,7 @@ SchematicUnity.API-загрузчик (каркас), Audio/Classification, Clie
 ### ✅ Compile-pass закрыт: 0 ошибок
 
 Codex-сессия 2026-06-08:
+- [x] Синхронизация состояния после interruption по лимитам: TODO и shared log обновлены, код не менялся.
 - [x] Добавлен `FYDNE_SKIP_LEGACY_PATCHES` в `scripts/build-plugin.ps1`.
 - [x] Отключены/обернуты проблемные legacy Harmony patches, которые ссылались на удаленные/приватные v14 методы игры.
 - [x] Сильно расширен `plugin/QurreShim`: `Player` subobjects, `Effects`, `Administrative`, `StatsInformation`, `Models/Schematic`, `Room/Door/WorkStation`, `Core.InjectEventMethod(MethodInfo)`, `Round`, `Server`, global compat helpers.

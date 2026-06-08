@@ -78,6 +78,18 @@ plugin/QurreShim  — shim Qurre→LabAPI (компилируется)
 
 ## 📝 LOG ENTRIES
 
+### 2026-06-08 (8) ✅ STATUS SYNC — Agent: Codex
+
+**Status**: SYNC_ONLY — лимиты закончились, состояние проекта зафиксировано в `TODO.md` и this log.
+**Related To**: pause point after the last bridge pass.
+
+No code changes in this mini-step. Current project status remains:
+- `Qurre.dll` and `Loli.dll` compile with `0` errors.
+- Event bridge is partial but materially improved: round/player/combat/command/item-radio/map/open-door/generator/locker/corpse/effects are bridged.
+- Runtime smoke-test on a live SCP:SL/LabAPI server is still the next hard check.
+
+---
+
 ### 2026-06-08 (7) ✅ EVENT BRIDGE PASS #1 — Agent: Codex
 
 **Status**: COMPILE_PASS + OFFLINE_EVENT_BRIDGE_PASS — `Qurre.dll` and `Loli.dll` still build with **0 compile errors**.
