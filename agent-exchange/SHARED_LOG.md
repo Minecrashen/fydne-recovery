@@ -17,7 +17,7 @@
 - **Стратегический (не-техн.):** возврат старой аудитории невозможен без **дампа MongoDB** —
   он только у основателя. «Без баз» решено стартовать с нуля (см. DECISION 2026-06-07).
 - **Runtime не проверен:** `Qurre.dll` и `Loli.dll` собираются, но ещё не загружались на живой SCP:SL/LabAPI сервер.
-- **Event bridge частичный:** `UsedItem/UseItem/UsingRadio`, `GameConsoleCommand`, generator/workstation/locker/corpse
+- **Event bridge частичный:** `UsedItem/UseItem/UsingRadio`, generator/workstation/locker/corpse
   и часть map/SCP payload ещё требуют отдельного bridge-pass.
 - **Железо:** французская `vm.nano` 2 vCore / 2 GB RAM годится только для лёгкого теста/ностальгического mini-сервера;
   полный публичный стек с несколькими SCP:SL инстансами и Mongo туда не помещается.
@@ -96,13 +96,14 @@ Changed:
   LCZ decontamination, and SCP-079 recontainment.
 - `plugin/QurreShim/src/EventMap.cs`: filled legacy enum→event type map and added LabAPI subscriptions for:
   round lifecycle/check/force-start; player join/leave/spawn/role/death/damage; doors; pickup/drop/change item; escape;
-  cuffs; ban/kick/reports/RA-list; pickup creation/decon/door damage/door lock; warhead start/stop/detonate;
+  cuffs; ban/kick/reports/RA-list; RA/client/server-console command split with reply propagation;
+  pickup creation/decon/door damage/door lock; warhead start/stop/detonate;
   Scp914/173/096/079/049/106 partial events; effect updating.
 
 Known deferred bridge gaps:
 - `UsedItem`, `UseItem`, and `UsingRadio` are intentionally not wired yet: in LabAPI 1.1.7 the inspected args did not expose
   enough player/item/radio payload for old FYDNE handlers, and firing empty events would create noisy null-reference runtime errors.
-- `GameConsoleCommand` still needs separation from RA command handling via LabAPI `CommandType`.
+- Command reply/permission semantics still need runtime verification on RA, client console, and server console.
 - Generators, workstation, lockers, corpse spawn, full Tesla/OpenDoor payload, and full effect disabled/type mapping are still pending.
 
 Next runtime step:

@@ -260,6 +260,11 @@ namespace Qurre.API
 
         static void Map(object enumValue, Type structType) => _enumToStruct[enumValue] = structType;
         static Qurre.API.Controllers.Player Q(LabPlayer player) => Qurre.API.Controllers.Player.Get(player);
+        static Qurre.API.Controllers.Player Q(CommandSender sender)
+        {
+            try { return Q(LabPlayer.Get(sender)); }
+            catch { return Server.Host; }
+        }
         static void PushAllowed(dynamic args, EventBase ev) { try { args.IsAllowed = ev.Allowed; } catch { } }
         static float ReadDamage(object handler) { try { return (float)((dynamic)handler).Damage; } catch { return 0f; } }
         static Qurre.API.Objects.EffectType EffectTypeFrom(object effect)
@@ -278,9 +283,35 @@ namespace Qurre.API
 
         static void OnCommandExecuting(SArgs.CommandExecutingEventArgs args)
         {
-            var ev = new RemoteAdminCommandEvent { Allowed = args.IsAllowed, Sender = args.Sender, Name = args.CommandName, Args = args.Arguments.ToArray() };
-            Core.Dispatch(ev);
+            string[] argv = args.Arguments.ToArray();
+            if (args.CommandType == LabApi.Features.Enums.CommandType.RemoteAdmin)
+            {
+                var ev = Core.Dispatch(new RemoteAdminCommandEvent { Player = Q(args.Sender), Allowed = args.IsAllowed, Sender = args.Sender, Name = args.CommandName, Args = argv });
+                PushCommandResult(args, ev, true);
+                return;
+            }
+
+            if (args.CommandType == LabApi.Features.Enums.CommandType.Client || args.CommandType == LabApi.Features.Enums.CommandType.Console)
+            {
+                var ev = Core.Dispatch(new GameConsoleCommandEvent { Player = Q(args.Sender), Allowed = args.IsAllowed, Sender = args.Sender, Name = args.CommandName, Args = argv });
+                PushCommandResult(args, ev, false);
+            }
+        }
+
+        static void PushCommandResult(SArgs.CommandExecutingEventArgs args, EventBase ev, bool remoteAdmin)
+        {
             args.IsAllowed = ev.Allowed;
+            if (string.IsNullOrEmpty(ev.Reply)) return;
+
+            try
+            {
+                if (remoteAdmin) args.Sender.RaReply(ev.Reply, true, false, ev.Color ?? string.Empty);
+                else args.Sender.Respond(ev.Reply, true);
+            }
+            catch
+            {
+                try { args.Sender.Print(ev.Reply); } catch { }
+            }
         }
 
         static void OnPickupCreated(SArgs.PickupCreatedEventArgs args) => Core.Dispatch(new CreatePickupEvent { Pickup = args.Pickup?.Base, Position = args.Pickup?.Position ?? UnityEngine.Vector3.zero });

@@ -37,9 +37,12 @@ Codex-сессия 2026-06-08:
 - [x] `EventMap.WireLabApi()` частично реализован: round lifecycle/check/force-start, player join/leave/spawn/role/death/damage,
   doors, pickup/drop/change item, escape, cuffs, ban/kick/reports/RA-list, map pickup/decon/door damage/lock,
   alpha warhead, Scp914/173/096/079/049/106 и effect updating.
+- [x] Command bridge pass: LabAPI `CommandType.RemoteAdmin` → `RemoteAdminCommandEvent`,
+  `CommandType.Client/Console` → `GameConsoleCommandEvent`; заполняются `Player/Sender/Name/Args`,
+  `Reply` возвращается через `RaReply`/`Respond`.
 - [ ] Не считать runtime готовым: `UsedItem/UseItem/UsingRadio` пока НЕ подключены к LabAPI, потому что в текущей
-  LabAPI 1.1.7 сигнатуре не найден полезный payload для старых FYDNE-хендлеров; `GameConsoleCommand` отдельно
-  не разведён; generator/workstation/locker/corpse и часть SCP/map событий требуют следующего bridge-pass.
+  LabAPI 1.1.7 сигнатуре не найден полезный payload для старых FYDNE-хендлеров; generator/workstation/locker/corpse
+  и часть SCP/map событий требуют следующего bridge-pass.
 - [ ] Следующий шаг: runtime smoke-test на локальном SCP:SL/LabAPI сервере.
 
 ### Исторический слой: 12 Harmony-ошибок
@@ -78,11 +81,11 @@ Codex-сессия 2026-06-08:
 - [x] Пачка 3 (бой): `Damage/Attack` → `Hurting/Hurt/Dying/Death`.
 - [x] Пачка 4a (двери/пикапы/дроп/эскейп): `InteractDoor/PickupItem/PrePickupItem/DropItem/DroppedItem/DropAmmo/ChangeItem/Escape`.
 - [x] Пачка 5a (SCP partial): `Scp914/Scp173/Scp096/Scp079/Scp049/Scp106` основные события.
-- [x] Пачка 6a (админ partial): `RemoteAdminCommand`, RA-list, ban/kick/reports.
+- [x] Пачка 6a (админ/команды partial): `RemoteAdminCommand`, `GameConsoleCommand`, RA-list, ban/kick/reports.
 - [x] Пачка 7a (карта/варх partial): `DamageDoor/LockDoor/CreatePickup/LczDecontamination/TriggerTesla/AlphaWarhead`.
 - [x] Пачка 8a (эффекты partial): `EffectEnabled` через LabAPI `UpdatingEffect`.
 - [ ] Пачка 4b: `UsedItem/UseItem/UsingRadio` с реальным player/item/radio payload.
-- [ ] Пачка 6b: разделить `GameConsoleCommand` и `RemoteAdminCommand` по `CommandType`, корректно прокидывать reply.
+- [ ] Пачка 6b: runtime-проверка reply/permission semantics для RA/client/server console.
 - [ ] Пачка 7b: `OpenDoor`, workstation, generators, lockers, corpse spawn, полноценный Tesla payload.
 - [ ] Пачка 8b: `EffectDisabled`/effect type mapping без эвристики по имени класса.
 
