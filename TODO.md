@@ -219,3 +219,18 @@ Still runtime-sensitive:
 Next hard gate:
 - [ ] Start `C:\Users\Admin\fydne_build\scpsl-server\LocalAdmin.exe` and capture first LabAPI plugin-load log.
 - [ ] Fix first live `TypeLoadException` / `MissingMethodException` / `NullReferenceException` batch from server logs.
+
+---
+
+## 2026-06-09 Codex pass: local smoke helper + safer audio state
+
+- [x] Added `scripts/start-local-smoke-test.ps1` to launch local `LocalAdmin.exe` in a separate console.
+- [x] Improved audio shim state:
+  `AudioPlayerBot` now has a queue, current task, `ReferenceHub`, stop/destroy behavior, and waits for estimated raw-audio duration.
+- [x] `StreamAudio` now supports reset/read-ended/read-percent/duration estimation and closes streams on completion/skip.
+- [x] `Audio.CreateNewAudioPlayer(...)` now attempts to create a Mirror fake player and falls back to host hub if unavailable.
+- [x] Re-deployed current `Qurre.dll` + `Loli.dll` to local LabAPI global plugin folder.
+- [x] Verification: `scripts/build-shim.ps1` OK; `scripts/build-plugin.ps1` OK, `0` errors.
+
+Known limitation:
+- [ ] Real Opus `VoiceMessage` playback is not fully restored yet. The current pass prevents null-reference/resource issues around FYDNE voice calls, but it does not guarantee audible intercom output.

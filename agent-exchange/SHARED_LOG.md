@@ -373,3 +373,26 @@ Verified:
 Next:
 - Start local `LocalAdmin.exe` and fix the first live server-log batch.
 - Audio voice playback remains the largest known stub.
+
+---
+
+### 2026-06-09 (12) LOCAL SMOKE HELPER + SAFER AUDIO STATE - Agent: Codex
+
+Status: OFFLINE_COMPAT_PASS - `Qurre.dll` and `Loli.dll` build with 0 compile errors and were deployed locally again.
+
+Changed:
+- Added `scripts/start-local-smoke-test.ps1` to launch local `LocalAdmin.exe` in a separate console.
+- Improved audio shim state:
+  - `AudioPlayerBot` now has queue/current-task state, stop/destroy behavior, and estimated-duration waiting.
+  - `StreamAudio` can reset, report completion/read percent, estimate raw f32le duration, and close its stream.
+  - `Audio.CreateNewAudioPlayer(...)` now attempts Mirror fake-player creation and falls back to host hub.
+- This does not yet implement full Opus `VoiceMessage` output, but removes the worst null/resource behavior from the previous stub.
+
+Verified:
+- `scripts/build-shim.ps1` -> OK, warnings only.
+- `scripts/build-plugin.ps1` -> OK, 0 errors.
+- `scripts/deploy-local-plugin.ps1 -Build` -> OK.
+
+Next:
+- Live LocalAdmin plugin-load test.
+- Full audio output pass after first server log batch.
