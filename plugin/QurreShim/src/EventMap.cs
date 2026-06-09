@@ -30,6 +30,7 @@ namespace Qurre.API
     {
         static readonly Dictionary<object, Type> _enumToStruct = new Dictionary<object, Type>();
         static bool _wired;
+        static bool DispatchPostRoleEvents => EnvEnabled("FYDNE_DISPATCH_POST_ROLE_EVENTS");
 
         internal static void PopulateEnumMap()
         {
@@ -138,9 +139,13 @@ namespace Qurre.API
             PlayerHandlers.Joined += OnJoined;
             PlayerHandlers.Left += OnLeft;
             PlayerHandlers.Spawning += OnSpawning;
-            PlayerHandlers.Spawned += OnSpawned;
             PlayerHandlers.ChangingRole += OnChangingRole;
-            PlayerHandlers.ChangedRole += OnChangedRole;
+            if (DispatchPostRoleEvents)
+            {
+                Log.Warn("Qurre-shim: FYDNE_DISPATCH_POST_ROLE_EVENTS=1, legacy Spawn/ChangeRole handlers will run on LabAPI post events too.");
+                PlayerHandlers.Spawned += OnSpawned;
+                PlayerHandlers.ChangedRole += OnChangedRole;
+            }
             PlayerHandlers.Dying += OnDying;
             PlayerHandlers.Death += OnDeath;
             PlayerHandlers.Hurting += OnHurting;
@@ -219,9 +224,12 @@ namespace Qurre.API
             PlayerHandlers.Joined -= OnJoined;
             PlayerHandlers.Left -= OnLeft;
             PlayerHandlers.Spawning -= OnSpawning;
-            PlayerHandlers.Spawned -= OnSpawned;
             PlayerHandlers.ChangingRole -= OnChangingRole;
-            PlayerHandlers.ChangedRole -= OnChangedRole;
+            if (DispatchPostRoleEvents)
+            {
+                PlayerHandlers.Spawned -= OnSpawned;
+                PlayerHandlers.ChangedRole -= OnChangedRole;
+            }
             PlayerHandlers.Dying -= OnDying;
             PlayerHandlers.Death -= OnDeath;
             PlayerHandlers.Hurting -= OnHurting;
@@ -579,5 +587,11 @@ namespace Qurre.API
         static void OnScp049StartingResurrection(Scp049Args.Scp049StartingResurrectionEventArgs args) { var ev = Core.Dispatch(new Scp049RaisingStartEvent { Player = Q(args.Player), Target = Q(args.Target), Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }
         static void OnScp049ResurrectedBody(Scp049Args.Scp049ResurrectedBodyEventArgs args) => Core.Dispatch(new Scp049RaisingEndEvent { Player = Q(args.Player), Target = Q(args.Target) });
         static void OnScp106TeleportingPlayer(Scp106Args.Scp106TeleportingPlayerEvent args) { var ev = Core.Dispatch(new Scp106AttackEvent { Player = Q(args.Target), Scp = Q(args.Player), Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }
+
+        static bool EnvEnabled(string name)
+        {
+            string value = Environment.GetEnvironmentVariable(name) ?? string.Empty;
+            return value == "1" || value.Equals("true", StringComparison.OrdinalIgnoreCase) || value.Equals("yes", StringComparison.OrdinalIgnoreCase) || value.Equals("on", StringComparison.OrdinalIgnoreCase);
+        }
     }
 }

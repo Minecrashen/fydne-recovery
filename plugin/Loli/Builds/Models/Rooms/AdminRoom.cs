@@ -37,8 +37,20 @@ static class AdminRoom
 
         if (Round.Waiting)
         {
+            if (WaitingSpawnPoint == Vector3.zero)
+            {
+                Log.Warn("AdminRoom waiting spawn skipped: WaitingSpawnPoint is zero, custom room probably was not loaded.");
+                return;
+            }
+
             ev.Position = WaitingSpawnPoint;
             ev.Player.GetAmmo();
+            return;
+        }
+
+        if (TutorialSpawnPoint == Vector3.zero)
+        {
+            Log.Warn("AdminRoom tutorial spawn skipped: TutorialSpawnPoint is zero, custom room probably was not loaded.");
             return;
         }
 
@@ -124,10 +136,17 @@ static class AdminRoom
         WaitingSpawnPoint = new Model("WaitingSpawnPoint", new(0, 4.614f, 1.575f), root: model).GameObject.transform
             .position;
 
+        Log.Custom($"AdminRoom loaded waiting={WaitingSpawnPoint} tutorial={TutorialSpawnPoint}", "FYDNE-BUILD", System.ConsoleColor.DarkCyan);
 
         var scheme =
             SchematicUnity.API.SchematicManager.LoadSchematic(Path.Combine(Paths.Plugins, "Schemes",
                 "AdminRoom.json"), model.GameObject.transform.position, model.GameObject.transform.rotation);
+
+        if (scheme?.Objects == null)
+        {
+            Log.Warn("AdminRoom schematic returned no objects; spawn points exist, but room visuals/colliders may be incomplete.");
+            return;
+        }
 
         foreach (var _obj in scheme.Objects)
             FindObjects(_obj);

@@ -9,6 +9,29 @@
 
 ---
 
+## 2026-06-09 Codex pass: pre-test spawn bridge hardening
+
+- [x] Found a static bridge bug: `SpawnEvent` and `ChangeRoleEvent` were dispatched twice, once from LabAPI pre-events (`Spawning`/`ChangingRole`) and again from post-events (`Spawned`/`ChangedRole`).
+- [x] Disabled post-dispatch by default in `plugin/QurreShim/src/EventMap.cs`.
+  - Legacy FYDNE handlers now run on pre-events where `Position`, `Role`, and `Allowed` can still be applied back to LabAPI.
+  - Old double-dispatch behavior is still available for comparison with `FYDNE_DISPATCH_POST_ROLE_EVENTS=1`.
+- [x] Added `FYDNE_DISPATCH_POST_ROLE_EVENTS=0` to `.env.example`.
+- [x] Added guard/diagnostic logs for custom spawn zones:
+  - `AdminRoom` logs computed waiting/tutorial spawn points and skips forced `(0,0,0)` spawn if the room was not initialized.
+  - `Range` logs chaos/donate/guard spawn corrections and warns if the schematic/vent room is missing.
+  - New log prefix: `FYDNE-BUILD`.
+- [x] Rebuilt and deployed local plugin binaries:
+  - `scripts/build-shim.ps1` -> OK, warnings only.
+  - `scripts/build-plugin.ps1` -> OK, 0 errors.
+  - `scripts/deploy-local-plugin.ps1` -> OK.
+  - deployed `Loli.dll` SHA256: `7A916DD377CC9C3240965FDA93E368A95FB06B7C2CBF234E6B19C1CD49C1E79A`.
+  - deployed `Qurre.dll` SHA256: `90BB058FDCB0D538C26CEF1E2F730A0091A7E1C2DB4FB35C9D5183072D2BE551`.
+
+Next test additions:
+- [ ] In LocalAdmin logs also inspect `FYDNE-BUILD`.
+- [ ] Confirm each spawn has only one `SpawnEvent begin` and one `ChangeRoleEvent begin` unless `FYDNE_DISPATCH_POST_ROLE_EVENTS=1` is explicitly enabled.
+- [ ] If waiting/tutorial spawn is still in the air, use `FYDNE-BUILD AdminRoom loaded waiting=... tutorial=...` to decide whether to keep, move, or disable the legacy admin waiting room.
+
 ## 2026-06-09 Codex pass: runtime trace instrumentation
 
 - [x] Added QurreShim event tracing in `Qurre.API.Core.Dispatch<T>()`.

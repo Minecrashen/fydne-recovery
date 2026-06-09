@@ -3,6 +3,30 @@
 Координационный лог между агентами/устройствами. Читай перед работой, обновляй после.
 Протокол — в `AGENT_PROTOCOL.md`. Новые записи — В НАЧАЛО секции LOG ENTRIES.
 
+### 2026-06-09 (11) PRE-TEST SPAWN BRIDGE HARDENING - Agent: Codex
+
+**Status**: COMPILE_PASS + DEPLOYED - static hardening before the next live LocalAdmin test.
+**Related To**: spawn in air / kick after force-start / suspected legacy admin waiting room and duplicated spawn handlers.
+
+Changed:
+- `plugin/QurreShim/src/EventMap.cs`: stopped dispatching legacy `SpawnEvent`/`ChangeRoleEvent` from LabAPI post events by default. They now run from pre events (`Spawning`/`ChangingRole`) where `Position`, `Role`, and `Allowed` can be applied back to LabAPI. Old double-dispatch behavior can be enabled only for comparison with `FYDNE_DISPATCH_POST_ROLE_EVENTS=1`.
+- `.env.example`: added `FYDNE_DISPATCH_POST_ROLE_EVENTS=0`.
+- `plugin/Loli/Builds/Models/Rooms/AdminRoom.cs`: logs computed admin waiting/tutorial spawn points, warns when schematic has no objects, and skips forced zero-position spawns if the custom room was not initialized.
+- `plugin/Loli/Builds/Models/Rooms/Range.cs`: logs chaos/donate/guard spawn overrides and warns when EzVent or schematic objects are missing. New prefix: `FYDNE-BUILD`.
+
+Verified:
+- `scripts/build-shim.ps1` -> OK, warnings only.
+- `scripts/build-plugin.ps1` -> OK, 0 errors.
+- `scripts/deploy-local-plugin.ps1` -> OK.
+- deployed `Loli.dll` SHA256: `7A916DD377CC9C3240965FDA93E368A95FB06B7C2CBF234E6B19C1CD49C1E79A`.
+- deployed `Qurre.dll` SHA256: `90BB058FDCB0D538C26CEF1E2F730A0091A7E1C2DB4FB35C9D5183072D2BE551`.
+
+Next live test:
+- Inspect `FYDNE-BOOT`, `FYDNE-BUILD`, `FYDNE-TRACE`, and `FYDNE-SOCKET`.
+- Confirm that each spawn/role transition produces one legacy `SpawnEvent`/`ChangeRoleEvent`, not two.
+- If the player still appears in the old admin waiting room, use the logged `AdminRoom loaded waiting=... tutorial=...` coordinates to decide whether to keep/move/disable that feature.
+
+---
 ### 2026-06-09 (10) RUNTIME TRACE INSTRUMENTATION - Agent: Codex
 
 **Status**: COMPILE_PASS + DEPLOYED - added broad runtime diagnostics for the current spawn/crash investigation.

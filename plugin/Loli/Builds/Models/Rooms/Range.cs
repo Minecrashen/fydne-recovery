@@ -52,10 +52,16 @@ namespace Loli.Builds.Models.Rooms
                 return;
 
             if (DonateSpawnPoint != default && (ev.Player.Tag ?? string.Empty).Contains("DonateSpawnPoint"))
+            {
+                Qurre.API.Log.Custom($"Range donate spawn override player={ev.Player.UserInformation?.UserId} from={ev.Position} to={DonateSpawnPoint}", "FYDNE-BUILD", System.ConsoleColor.DarkCyan);
                 ev.Position = DonateSpawnPoint;
+            }
             else if (ChaosSpawnPoint != default && ev.Role is RoleTypeId.ChaosConscript
                 or RoleTypeId.ChaosMarauder or RoleTypeId.ChaosRepressor or RoleTypeId.ChaosRifleman)
+            {
+                Qurre.API.Log.Custom($"Range chaos spawn override role={ev.Role} from={ev.Position} to={ChaosSpawnPoint}", "FYDNE-BUILD", System.ConsoleColor.DarkCyan);
                 ev.Position = ChaosSpawnPoint;
+            }
         }
 
         [EventMethod(PlayerEvents.Damage, -2)]
@@ -78,6 +84,7 @@ namespace Loli.Builds.Models.Rooms
             {
                 YVent = 0;
                 VentRoom = null;
+                Qurre.API.Log.Warn("Range partial load: EzVent room not found; vent lift and guard spawn correction disabled.");
                 return;
             }
             {
@@ -186,6 +193,14 @@ namespace Loli.Builds.Models.Rooms
                 Object.Destroy(go);
             }
 
+            Qurre.API.Log.Custom($"Range loaded chaos={ChaosSpawnPoint} donate={DonateSpawnPoint} vent={VentRoom?.Type} yVent={YVent}", "FYDNE-BUILD", System.ConsoleColor.DarkCyan);
+
+            if (Scheme?.Objects == null)
+            {
+                Qurre.API.Log.Warn("Range schematic returned no objects; spawn points exist, but room visuals/colliders may be incomplete.");
+                return;
+            }
+
             foreach (var _obj in Scheme.Objects)
                 findObjects(_obj);
 
@@ -220,6 +235,13 @@ namespace Loli.Builds.Models.Rooms
             if (Vector3.Distance(VentRoom.Position, ev.Position) > 10)
                 return;
 
+            if (DonateSpawnPoint == default)
+            {
+                Qurre.API.Log.Warn("Range guard spawn correction skipped: DonateSpawnPoint is not initialized.");
+                return;
+            }
+
+            Qurre.API.Log.Custom($"Range guard spawn correction from={ev.Position} to={DonateSpawnPoint}", "FYDNE-BUILD", System.ConsoleColor.DarkCyan);
             ev.Position = DonateSpawnPoint;
         }
 
