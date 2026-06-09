@@ -385,7 +385,7 @@ namespace Qurre.API
                 return;
             }
 
-            if (args.CommandType == LabApi.Features.Enums.CommandType.Console && args.Sender == null)
+            if (args.CommandType == LabApi.Features.Enums.CommandType.Console)
                 return;
 
             if (args.CommandType == LabApi.Features.Enums.CommandType.Client || args.CommandType == LabApi.Features.Enums.CommandType.Console)

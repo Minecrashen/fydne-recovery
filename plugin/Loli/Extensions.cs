@@ -440,6 +440,12 @@ namespace Loli
 
         static internal void RestartCrush(string reason)
         {
+            if (Core.RecoveryMode)
+            {
+                Log.Warn($"RecoveryMode: blocked server restart: {reason}");
+                return;
+            }
+
             Server.Restart();
 
             new Dishook(Core.WebHooks.Crush)

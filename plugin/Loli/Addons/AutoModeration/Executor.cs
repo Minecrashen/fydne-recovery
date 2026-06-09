@@ -54,6 +54,9 @@ static class Executor
     [EventMethod(RoundEvents.Start)]
     private static void Register()
     {
+        if (Core.RecoveryMode)
+            return;
+
         Messages.Clear();
         CachedMeta.Clear();
         Timing.RunCoroutine(Сycle(), ThreadName);
