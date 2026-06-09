@@ -40,6 +40,9 @@ namespace Loli.Addons
         [EventMethod(PlayerEvents.Join)]
         static void Join(JoinEvent ev)
         {
+            if (Core.RecoveryMode)
+                return;
+
             Player pl = ev.Player;
 
             if (!UserDataArray.TryGetValue(pl.UserInformation.UserId, out SafeData data))
@@ -99,6 +102,9 @@ namespace Loli.Addons
 
         static internal void Process(Player pl)
         {
+            if (Core.RecoveryMode)
+                return;
+
             if (Round.Waiting)
                 return;
 

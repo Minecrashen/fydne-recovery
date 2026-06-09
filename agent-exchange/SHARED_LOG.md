@@ -533,3 +533,44 @@ Remaining:
 - User needs to retest join + force-start with `backend/fydne-socket` running and socket env enabled.
 - Missing original schematics must be rebuilt; no founder source remains.
 - Backend is intentionally JSON-first. Move to SQLite/PostgreSQL only after gameplay loop is stable.
+
+---
+
+### 2026-06-09 (16) LIVE SPAWN DISCONNECT LOOP - Agent: Codex
+
+Status: RUNTIME_HARDENING_PASS - local plugin rebuilt/deployed; likely auto-reconnect loop disabled in recovery mode.
+
+User-provided live result:
+- Server no longer restarts by itself.
+- Player is thrown out a few seconds after spawn.
+- Rejoining also disconnects after a few seconds.
+- Sometimes spawn position is random or outside the map.
+
+Logs inspected:
+- Latest available LocalAdmin file:
+  `%APPDATA%\SCP Secret Laboratory\LocalAdminLogs\7777\LocalAdmin Log 2026-06-09 18.24.49.txt`
+- This log still used the old DLL from before the smoothing fix and contained a massive exception flood:
+  `RuntimeBinderException: Cannot implicitly convert type 'UnityEngine.Vector3' to 'UnityEngine.Quaternion'`
+  from `Loli.FixOnePrimitiveSmoothing.Update`.
+
+New root-cause candidate:
+- `Loli.Modules.Fixes.CheckPlayersPing()` checks `Player.LastSynced`.
+- If it thinks the player has not synced for >1s, it schedules `FastReconnect.Process(pl)`.
+- `FastReconnect.Process()` stores state, clears inventory, moves the player to `Vector3.zero`, sets spectator, and calls `pl.Client.Reconnect()`.
+- On the current LabAPI/QurreShim bridge, `LastSynced` may not preserve old Qurre semantics, so this can create a false-positive reconnect loop that matches the user's symptoms.
+
+Changed:
+- `Loli.Modules.Fixes.CheckPlayersPing()` now returns immediately when `Core.RecoveryMode` is enabled.
+- `Loli.Addons.FastReconnect.Join()` and `FastReconnect.Process()` now return immediately when `Core.RecoveryMode` is enabled.
+
+Verified:
+- `scripts/build-plugin.ps1` -> OK, 0 errors.
+- `scripts/deploy-local-plugin.ps1` -> OK.
+- Deployed `Loli.dll` SHA256:
+  `DA0873FFD6BF593127FF0AEEA5516F8950764AC449E80FA1F16B69BC98E0F4F6`
+
+Next:
+- User should retest join + force-start with the newly deployed DLL.
+- If disconnect persists, inspect the new log first; the previous latest log is stale relative to this patch.
+- If disconnect is fixed but spawn remains bad, next target is the spawn-position chain:
+  `Waiting.cs`, `AdminRoom.cs`, `Range.cs`, `Gate3.cs`, `FastReconnect.cs`, `Spawn.cs`, `SpawnManager.cs`, `Fixes.cs`.

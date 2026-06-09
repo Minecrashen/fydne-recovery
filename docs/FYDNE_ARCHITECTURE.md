@@ -22,8 +22,11 @@
 - `FixOnePrimitiveSmoothing` теперь пишет `Primitive.Base.NetworkRotation = Quaternion.Euler(Primitive.Rotation)`.
 - При уничтоженном/невалидном primitive компонент отключает себя и не спамит исключениями.
 - Исправление собрано, развернуто и запушено коммитом `c1d0b0c`.
+- После следующего пользовательского теста найден вероятный отдельный источник "кика" через несколько секунд: старая эвристика `Fixes.CheckPlayersPing()` принимала `Player.LastSynced > 1s` за зависшего клиента и вызывала `FastReconnect.Process()`, который делал `pl.Client.Reconnect()` и временно переносил игрока в `Vector3.zero`.
+- В recovery-mode этот механизм отключен: `CheckPlayersPing()`, `FastReconnect.Join()` и `FastReconnect.Process()` больше не запускают legacy auto-reconnect.
+- Текущая локальная DLL после этой правки: `Loli.dll` SHA256 `DA0873FFD6BF593127FF0AEEA5516F8950764AC449E80FA1F16B69BC98E0F4F6`.
 
-Следующий тест должен подтвердить, что exception flood исчез. Если игрока продолжит выкидывать, следующий слой проблемы надо искать уже в spawn/role pipeline, а не в smoothing.
+Следующий тест должен подтвердить, что exception flood исчез и reconnect-loop больше не срабатывает. Если игрока продолжит выкидывать, следующий слой проблемы надо искать уже в spawn/role pipeline, а не в smoothing/FastReconnect.
 
 ## Слои системы
 

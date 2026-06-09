@@ -9,6 +9,30 @@
 
 ---
 
+## 2026-06-09 Codex pass: live spawn disconnect loop
+
+- [x] Fresh LocalAdmin logs inspected. The newest available log still showed the old deployed build before `FixOnePrimitiveSmoothing`: more than 37k `RuntimeBinderException` entries from `Loli.FixOnePrimitiveSmoothing.Update`.
+- [x] Confirmed deployed `Loli.dll` was rebuilt after the smoothing fix, then rebuilt again after the FastReconnect guard.
+- [x] Found a likely cause of the player's "kick/reconnect after a few seconds": `Fixes.CheckPlayersPing()` uses `Player.LastSynced` and calls `FastReconnect.Process()`, which stores player state, sets position to `Vector3.zero`, sets spectator, then calls `pl.Client.Reconnect()`.
+- [x] Disabled the old FastReconnect ping heuristic in `Core.RecoveryMode`:
+  - `Loli.Modules.Fixes.CheckPlayersPing()` returns immediately in recovery mode.
+  - `Loli.Addons.FastReconnect.Join()` and `FastReconnect.Process()` return immediately in recovery mode.
+- [x] Rebuilt and deployed current local plugin:
+  - `scripts/build-plugin.ps1` -> OK, 0 errors.
+  - `scripts/deploy-local-plugin.ps1` -> OK.
+  - deployed `Loli.dll` SHA256: `DA0873FFD6BF593127FF0AEEA5516F8950764AC449E80FA1F16B69BC98E0F4F6`.
+
+Next test:
+- [ ] Start backend if socket mode is used: `scripts/start-fydne-socket.ps1`.
+- [ ] Start LocalAdmin with `FYDNE_RECOVERY_MODE=1`.
+- [ ] Join `127.0.0.1:7777`, force-start, wait at least 30 seconds after spawn.
+- [ ] If disconnect persists, inspect the new log for `FastReconnect`, `LastSynced`, `SpawnEvent`, `ChangeRoleEvent`, `AdminRoom`, `Range`, `NullReferenceException`, `MissingMethodException`, and `RuntimeBinderException`.
+
+Next code targets if the disconnect is fixed but spawn is still wrong:
+- [ ] Add recovery-mode spawn tracing for `SpawnEvent`/`ChangeRoleEvent`: original role/position, final role/position, handler source.
+- [ ] Harden `AdminRoom` waiting spawn against missing/partial custom geometry.
+- [ ] Audit hardcoded out-of-map rooms: `AdminRoom`, `Range`, `Gate3`, `Bashni`, `RadarLoc`, `VertPlace`, `NuclearAttack`, `Scp008`, `Hackers`.
+
 ## 🔥 P0 — Миграция плагина Qurre→LabAPI (почти готово)
 
 Цель: довести `scripts\build-plugin.ps1 -Census` до **0 ошибок**.

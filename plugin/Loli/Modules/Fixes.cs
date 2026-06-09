@@ -324,6 +324,9 @@ namespace Loli.Modules
 
         static internal void CheckPlayersPing()
         {
+            if (Core.RecoveryMode)
+                return;
+
             string pings = string.Empty;
 
             foreach (var pl in Player.List)
