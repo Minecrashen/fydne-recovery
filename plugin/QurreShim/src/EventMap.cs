@@ -357,7 +357,18 @@ namespace Qurre.API
             }
         }
 
-        static void OnPickupCreated(SArgs.PickupCreatedEventArgs args) => Core.Dispatch(new CreatePickupEvent { Pickup = args.Pickup?.Base, Position = args.Pickup?.Position ?? UnityEngine.Vector3.zero });
+        static void OnPickupCreated(SArgs.PickupCreatedEventArgs args)
+        {
+            if (args.Pickup?.Base == null) return;
+            var ev = Core.Dispatch(new CreatePickupEvent
+            {
+                Player = Q(args.Pickup.LastOwner),
+                Pickup = args.Pickup.Base,
+                Position = args.Pickup.Position,
+                Info = new PickupInfo { ItemId = args.Pickup.Type, Serial = args.Pickup.Serial }
+            });
+            if (!ev.Allowed) args.Pickup.Destroy();
+        }
         static void OnLczDecontaminationStarting(SArgs.LczDecontaminationStartingEventArgs args) { Decontamination.InProgress = true; var ev = Core.Dispatch(new LczDecontaminationEvent { Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }
         static void OnDoorDamaging(SArgs.DoorDamagingEventArgs args) { var ev = Core.Dispatch(new DamageDoorEvent { Door = Door.Get(args.Door), Damage = args.Damage, Allowed = args.IsAllowed }); args.Damage = ev.Damage; args.IsAllowed = ev.Allowed; }
         static void OnDoorLockChanged(SArgs.DoorLockChangedEventArgs args) => Core.Dispatch(new LockDoorEvent { Door = Door.Get(args.Door) });

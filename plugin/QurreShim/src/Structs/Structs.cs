@@ -116,6 +116,27 @@ namespace Qurre.Events.Structs
     public class PrePickupItemEvent : EventBase { }
     public class DropItemEvent : EventBase { }
     public class DroppedItemEvent : EventBase { }
+    public class PickupInfo
+    {
+        public LegacyItemId ItemId;
+        public ushort Serial;
+    }
+
+    public struct LegacyItemId
+    {
+        public ItemType Value;
+        public LegacyItemId(ItemType value) { Value = value; }
+        public ItemCategory GetCategory() => Qurre.API.ItemCompatExtensions.GetCategory(Value);
+        public static implicit operator ItemType(LegacyItemId item) => item.Value;
+        public static implicit operator LegacyItemId(ItemType item) => new LegacyItemId(item);
+        public static bool operator ==(LegacyItemId left, ItemType right) => left.Value == right;
+        public static bool operator !=(LegacyItemId left, ItemType right) => left.Value != right;
+        public static bool operator ==(ItemType left, LegacyItemId right) => left == right.Value;
+        public static bool operator !=(ItemType left, LegacyItemId right) => left != right.Value;
+        public override bool Equals(object obj) => obj is LegacyItemId other ? Value == other.Value : obj is ItemType item && Value == item;
+        public override int GetHashCode() => Value.GetHashCode();
+        public override string ToString() => Value.ToString();
+    }
     public class DropAmmoEvent : EventBase { }
     public class ChangeItemEvent : EventBase { }
     public class UseItemEvent : EventBase { }

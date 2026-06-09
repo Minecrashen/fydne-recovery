@@ -113,12 +113,29 @@ namespace Loli
 
             Scps.Scp294.Events.Init();
 
-            new Harmony("fydne.loli").PatchAll();
+            PatchAllSafely();
         }
 
         [PluginDisable]
         static internal void Disable()
             => Server.Restart();
+
+        static void PatchAllSafely()
+        {
+            Harmony harmony = new("fydne.loli");
+
+            foreach (System.Type type in typeof(Core).Assembly.GetTypes())
+            {
+                try
+                {
+                    harmony.CreateClassProcessor(type).Patch();
+                }
+                catch (System.Exception ex)
+                {
+                    Log.Error($"Harmony patch skipped: {type.FullName}: {ex.GetType().Name}: {ex.Message}");
+                }
+            }
+        }
 
         #endregion
 

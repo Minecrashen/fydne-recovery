@@ -234,3 +234,27 @@ Next hard gate:
 
 Known limitation:
 - [ ] Real Opus `VoiceMessage` playback is not fully restored yet. The current pass prevents null-reference/resource issues around FYDNE voice calls, but it does not guarantee audible intercom output.
+
+---
+
+## 2026-06-09 Codex pass: first live LocalAdmin smoke-pass
+
+- [x] Fixed local LabAPI deployment: `scripts/deploy-local-plugin.ps1` now copies runtime dependencies into `%APPDATA%\SCP Secret Laboratory\LabAPI\dependencies\global`.
+- [x] Added `System.Dynamic.dll` deployment for legacy `dynamic` handlers.
+- [x] Fixed `scripts/start-local-smoke-test.ps1` to pass port `7777` to `LocalAdmin.exe`, avoiding the interactive port prompt.
+- [x] Hardened `QurreBootstrap.LoadSiblingAssemblies()` for LabAPI assemblies with empty/unstable `Assembly.Location`; it now falls back to LabAPI plugin directories.
+- [x] Changed Loli Harmony startup to per-type patching so one broken legacy patch does not abort all other patches.
+- [x] Added `PrintPlayer` prepare guard for missing old `SCPLogs.Extensions.EventsExtensions.GetRolePrint`.
+- [x] Added named event-handler diagnostics in `Qurre.API.Core.Dispatch`.
+- [x] Restored key runtime compatibility found by live logs:
+  - `Room.Type` now maps current `MapGeneration.RoomName` to legacy `Qurre.API.Objects.RoomType`.
+  - `CreatePickupEvent.Info.ItemId/Serial` and cancellation behavior are populated.
+  - `LegacyItemId.GetCategory()` supports dynamic legacy calls.
+  - `ModelPrimitive.Primitive` returns a `Primitive` adapter for old `List<Primitive>` code.
+  - `SObject(false)` avoids creating orphan GameObjects for adapters.
+- [x] Live verification: SCP:SL `14.2.7` + LabAPI loads `Qurre-Shim`, enables it, reaches `Idle mode is now available` and `Waiting for players`.
+
+Remaining live warnings:
+- [ ] `HideRaAuth` transpiler logs `Index - 0 < 0`; old RA IL locals changed in v14.2.7. It currently falls back to original method and does not stop startup.
+- [ ] `Loli.Addons.AutoModeration.SaveLogs` Harmony target is skipped; old `TargetMethod()` no longer resolves cleanly.
+- [ ] Full player-join/round-start gameplay pass is still needed; current result is a server-start smoke-pass, not full gameplay validation.

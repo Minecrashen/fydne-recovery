@@ -29,8 +29,13 @@ namespace SchematicUnity.API.Objects
         public virtual dynamic Primitive => this;
         public virtual dynamic Light => null;
 
-        public SObject()
+        public SObject() : this(true)
         {
+        }
+
+        protected SObject(bool createObject)
+        {
+            if (!createObject) return;
             GameObject = new GameObject("SObject");
             Qurre.API.ShimState.SceneObjects.Add(this);
         }

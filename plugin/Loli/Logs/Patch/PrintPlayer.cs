@@ -9,6 +9,12 @@ namespace Loli.Logs.Patch;
 [HarmonyPatch]
 static class PrintPlayer
 {
+    private static bool Prepare()
+    {
+        Type type = AccessTools.TypeByName("SCPLogs.Extensions.EventsExtensions");
+        return AccessTools.Method(type, "GetRolePrint") is not null;
+    }
+
     private static MethodBase TargetMethod()
     {
         Type type = AccessTools.TypeByName("SCPLogs.Extensions.EventsExtensions");

@@ -24,28 +24,95 @@ namespace Qurre
 
         static void LoadSiblingAssemblies()
         {
-            string ownPath = Assembly.GetExecutingAssembly().Location;
-            string dir = Path.GetDirectoryName(ownPath);
-            if (string.IsNullOrEmpty(dir) || !Directory.Exists(dir)) return;
-
             var loaded = AppDomain.CurrentDomain.GetAssemblies()
                 .Where(a => !a.IsDynamic)
                 .Select(a =>
                 {
-                    try { return Path.GetFullPath(a.Location); }
+                    try
+                    {
+                        if (string.IsNullOrWhiteSpace(a.Location)) return string.Empty;
+                        return Path.GetFullPath(a.Location);
+                    }
                     catch { return string.Empty; }
                 })
                 .Where(path => !string.IsNullOrEmpty(path))
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-            foreach (string dll in Directory.GetFiles(dir, "*.dll"))
+            foreach (string dir in GetPluginDirectories())
             {
-                string full = Path.GetFullPath(dll);
-                if (loaded.Contains(full)) continue;
+                if (!Directory.Exists(dir)) continue;
 
-                try { Assembly.LoadFrom(full); }
-                catch (Exception ex) { Qurre.API.Log.Error($"Qurre-shim: failed to load sibling assembly {Path.GetFileName(dll)}: {ex.Message}"); }
+                foreach (string dll in Directory.GetFiles(dir, "*.dll"))
+                {
+                    string full = Path.GetFullPath(dll);
+                    if (loaded.Contains(full)) continue;
+
+                    try
+                    {
+                        Assembly.LoadFrom(full);
+                        loaded.Add(full);
+                    }
+                    catch (Exception ex)
+                    {
+                        Qurre.API.Log.Error($"Qurre-shim: failed to load sibling assembly {Path.GetFileName(dll)}: {ex.Message}");
+                    }
+                }
             }
+        }
+
+        static string[] GetPluginDirectories()
+        {
+            var dirs = new System.Collections.Generic.List<string>();
+            AddAssemblyDirectory(dirs, Assembly.GetExecutingAssembly());
+            AddAssemblyDirectory(dirs, typeof(QurreBootstrap).Assembly);
+
+            string root = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            if (!string.IsNullOrWhiteSpace(root))
+            {
+                string plugins = Path.Combine(root, "SCP Secret Laboratory", "LabAPI", "plugins");
+                if (Directory.Exists(plugins))
+                {
+                    foreach (string dir in Directory.GetDirectories(plugins))
+                        dirs.Add(dir);
+                }
+            }
+
+            return dirs
+                .Where(dir => !string.IsNullOrWhiteSpace(dir))
+                .Select(dir =>
+                {
+                    try { return Path.GetFullPath(dir); }
+                    catch { return string.Empty; }
+                })
+                .Where(dir => !string.IsNullOrEmpty(dir))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+        }
+
+        static void AddAssemblyDirectory(System.Collections.Generic.List<string> dirs, Assembly assembly)
+        {
+            AddPathDirectory(dirs, assembly.Location);
+
+            try
+            {
+                string codeBase = assembly.CodeBase;
+                if (!string.IsNullOrWhiteSpace(codeBase))
+                    AddPathDirectory(dirs, new Uri(codeBase).LocalPath);
+            }
+            catch { }
+        }
+
+        static void AddPathDirectory(System.Collections.Generic.List<string> dirs, string path)
+        {
+            if (string.IsNullOrWhiteSpace(path)) return;
+
+            try
+            {
+                string dir = Path.GetDirectoryName(path);
+                if (!string.IsNullOrWhiteSpace(dir))
+                    dirs.Add(dir);
+            }
+            catch { }
         }
     }
 }

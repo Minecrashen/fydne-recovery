@@ -16,6 +16,7 @@ namespace Qurre.API
         sealed class Entry
         {
             public int Priority;
+            public string Name;
             public object Key;                 // MethodInfo или Delegate — для удаления
             public Action<IBaseEvent> Invoke;  // унифицированный вызов
         }
@@ -100,6 +101,7 @@ namespace Qurre.API
                     Add(structType, new Entry
                     {
                         Priority = attr.Priority,
+                        Name = $"{m.DeclaringType?.FullName}.{m.Name}",
                         Key = m,
                         Invoke = ev => method.Invoke(null, withoutArgs ? null : new object[] { ev })
                     });
@@ -127,7 +129,7 @@ namespace Qurre.API
         // ---- Публичное API для плагина ----
 
         public static void InjectEventMethod<T>(Action<T> method, int priority = 0) where T : IBaseEvent
-            => Add(typeof(T), new Entry { Priority = priority, Key = method, Invoke = ev => method((T)ev) });
+            => Add(typeof(T), new Entry { Priority = priority, Name = Describe(method), Key = method, Invoke = ev => method((T)ev) });
 
         public static void ExtractEventMethod<T>(Action<T> method) where T : IBaseEvent
         {
@@ -139,7 +141,7 @@ namespace Qurre.API
         {
             var eventType = method?.GetParameters().FirstOrDefault()?.ParameterType;
             if (eventType == null || !typeof(IBaseEvent).IsAssignableFrom(eventType)) return;
-            Add(eventType, new Entry { Priority = priority, Key = method, Invoke = ev => method.Invoke(null, new object[] { ev }) });
+            Add(eventType, new Entry { Priority = priority, Name = $"{method.DeclaringType?.FullName}.{method.Name}", Key = method, Invoke = ev => method.Invoke(null, new object[] { ev }) });
         }
 
         public static void ExtractEventMethod(MethodInfo method)
@@ -155,9 +157,28 @@ namespace Qurre.API
         {
             if (_byType.TryGetValue(typeof(T), out var list))
                 foreach (var e in list.ToArray())
-                    try { e.Invoke(ev); }
+                    try { InvokeEntry(e, ev); }
                     catch (Exception ex) { Log.Error($"Qurre-shim: хендлер {typeof(T).Name}: {ex.InnerException?.Message ?? ex.Message}"); }
             return ev;
+        }
+
+        static void InvokeEntry<T>(Entry entry, T ev) where T : IBaseEvent
+        {
+            try
+            {
+                entry.Invoke(ev);
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Qurre-shim: handler {typeof(T).Name}::{entry.Name ?? "<unknown>"}: {ex.InnerException?.Message ?? ex.Message}");
+            }
+        }
+
+        static string Describe(Delegate method)
+        {
+            var info = method?.Method;
+            if (info == null) return "<delegate>";
+            return $"{info.DeclaringType?.FullName}.{info.Name}";
         }
     }
 }

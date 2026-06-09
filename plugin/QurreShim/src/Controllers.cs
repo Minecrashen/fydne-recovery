@@ -34,12 +34,61 @@ namespace Qurre.API.Controllers
         public Transform Transform => Base?.GameObject?.transform;
         public GameObject GameObject => Base?.GameObject;
         public string Name => Base?.Name.ToString() ?? string.Empty;
-        public dynamic Type => Base?.Name;
+        public RoomType Type => ResolveType();
         public List<Door> Doors => Base?.Doors?.Select(Door.Get).ToList() ?? new List<Door>();
         public List<Camera> Cameras => Base?.Cameras?.Select(Camera.Get).ToList() ?? new List<Camera>();
         public dynamic NetworkIdentity => Base?.GameObject?.GetComponent<Mirror.NetworkIdentity>();
         public RoomLights Lights { get; } = new RoomLights();
         public void LightsOff(float duration = 10f) { Lights.Enabled = false; }
+
+        RoomType ResolveType()
+        {
+            switch (Base?.Name.ToString())
+            {
+                case "Outside": return RoomType.Surface;
+                case "Pocket": return RoomType.Pocket;
+                case "Lcz173": return RoomType.Lcz173;
+                case "LczArmory": return RoomType.LczArmory;
+                case "LczClassDSpawn": return RoomType.LczClassDSpawn;
+                case "LczCheckpointA":
+                case "LczCheckpointB":
+                case "LczAirlock":
+                case "LczComputerRoom":
+                case "LczGlassroom":
+                case "LczGreenhouse":
+                case "LczToilets":
+                case "Lcz330":
+                case "Lcz914": return RoomType.LczCrossing;
+                case "Hcz049": return RoomType.Hcz049;
+                case "Hcz079": return RoomType.Hcz079;
+                case "Hcz106": return RoomType.Hcz106;
+                case "Hcz939": return RoomType.Hcz939;
+                case "HczArmory": return RoomType.HczArmory;
+                case "HczCheckpointA": return RoomType.HczChkpA;
+                case "HczCheckpointB": return RoomType.HczChkpB;
+                case "HczRampTunnel": return RoomType.HczCornerDeep;
+                case "HczMicroHID": return RoomType.HczHid;
+                case "HczWarhead": return RoomType.HczNuke;
+                case "HczTestroom": return RoomType.HczTest;
+                case "HczServers":
+                case "HczTesla":
+                case "Hcz096":
+                case "Hcz127":
+                case "HczAcroamaticAbatement":
+                case "HczCheckpointToEntranceZone":
+                case "HczWaysideIncinerator": return RoomType.HczCrossing;
+                case "EzIntercom": return RoomType.EzIntercom;
+                case "EzEvacShelter": return RoomType.EzShelter;
+                case "EzCollapsedTunnel": return RoomType.EzVent;
+                case "EzGateA":
+                case "EzGateB":
+                case "EzOfficeStoried": return RoomType.EzUpstairsPcs;
+                case "EzOfficeLarge":
+                case "EzOfficeSmall":
+                case "EzRedroom": return RoomType.EzCrossing;
+                default: return RoomType.Unknown;
+            }
+        }
     }
 
     public class RoomLights

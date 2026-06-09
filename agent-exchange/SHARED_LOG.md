@@ -396,3 +396,33 @@ Verified:
 Next:
 - Live LocalAdmin plugin-load test.
 - Full audio output pass after first server log batch.
+
+---
+
+### 2026-06-09 (13) FIRST LIVE LOCALADMIN SMOKE-PASS - Agent: Codex
+
+Status: LIVE_START_SMOKE_PASS - SCP:SL 14.2.7 + LabAPI loads Qurre-Shim, enables it, reaches idle mode and `Waiting for players` with no Qurre event-handler runtime errors in the latest checked startup log.
+
+Changed:
+- `scripts/deploy-local-plugin.ps1` now deploys runtime dependencies to `%APPDATA%\SCP Secret Laboratory\LabAPI\dependencies\global`, including `System.Dynamic.dll` for legacy dynamic handlers.
+- `scripts/start-local-smoke-test.ps1` now passes port `7777` to LocalAdmin so smoke tests do not block on the interactive port prompt.
+- `QurreBootstrap.LoadSiblingAssemblies()` no longer depends only on `Assembly.Location`; it falls back to LabAPI plugin directories when LabAPI/Mono reports an empty or unstable path.
+- Loli Harmony startup now patches per type with skip logging, so one broken legacy patch does not abort all later patches.
+- `PrintPlayer` now skips itself when the old SCPLogs `GetRolePrint` target is unavailable.
+- `Qurre.API.Core.Dispatch` now logs exact handler names for runtime event failures.
+- Runtime compatibility fixes from live logs:
+  - current `MapGeneration.RoomName` -> legacy `Qurre.API.Objects.RoomType` mapping, including `EzOfficeStoried -> EzUpstairsPcs`.
+  - `CreatePickupEvent.Info.ItemId/Serial`, `Player`, and cancellation/destroy behavior.
+  - `LegacyItemId.GetCategory()` for dynamic legacy calls.
+  - `ModelPrimitive.Primitive` adapter for old `Primitive` lists.
+  - `SObject(false)` adapter constructor path to avoid orphan GameObjects.
+
+Verified:
+- `scripts/deploy-local-plugin.ps1 -Build` -> OK.
+- Live `LocalAdmin.exe 7777` startup -> dependencies load, Qurre-Shim loads/enables, event registry starts, server reaches `Waiting for players`.
+- Latest checked log: `LocalAdmin Log 2026-06-09 11.47.16.txt`.
+
+Remaining:
+- `HideRaAuth` transpiler logs old-local-index failure; it returns original IL and does not stop startup.
+- `Loli.Addons.AutoModeration.SaveLogs` Harmony target is skipped; target discovery must be ported or the feature disabled.
+- Need player-join and real round-start gameplay smoke-pass next. Current pass proves startup, not full gameplay.

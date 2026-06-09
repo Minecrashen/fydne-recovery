@@ -1,5 +1,6 @@
 param(
     [string]$ServerPath = "C:\Users\Admin\fydne_build\scpsl-server",
+    [int]$Port = 7777,
     [switch]$Build
 )
 
@@ -17,6 +18,7 @@ if (!(Test-Path $localAdmin)) {
 
 Write-Host "Starting SCP:SL LocalAdmin smoke-test..." -ForegroundColor Cyan
 Write-Host "Server path: $ServerPath"
+Write-Host "Port: $Port"
 Write-Host "Watch the new console for LabAPI, Qurre.dll, Loli.dll, TypeLoadException, MissingMethodException, NullReferenceException."
 
-Start-Process -FilePath $localAdmin -WorkingDirectory $ServerPath
+Start-Process -FilePath $localAdmin -ArgumentList "$Port" -WorkingDirectory $ServerPath

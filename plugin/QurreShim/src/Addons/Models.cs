@@ -69,6 +69,8 @@ namespace Qurre.API.Addons.Models
     {
         public Toys.PrimitiveObjectToy Toy { get; }
         public override dynamic Base => Toy.Base;
+        readonly Primitive _primitive;
+        public override dynamic Primitive => _primitive;
         public PrimitiveType Type { get; }
         public PrimitiveFlags Flags
         {
@@ -86,6 +88,7 @@ namespace Qurre.API.Addons.Models
             Toy.Color = color;
             Toy.Flags = collidable ? PrimitiveFlags.Collidable | PrimitiveFlags.Visible : PrimitiveFlags.Visible;
             GameObject = Toy.GameObject;
+            _primitive = new Primitive(Toy, type);
             parent?.AddPart(this);
         }
 
@@ -105,6 +108,13 @@ namespace Qurre.API.Addons.Models
         public Toys.PrimitiveObjectToy Toy { get; }
         public override dynamic Base => Toy.Base;
         public PrimitiveType Type { get; }
+
+        internal Primitive(Toys.PrimitiveObjectToy toy, PrimitiveType type) : base(false)
+        {
+            Toy = toy;
+            Type = type;
+            GameObject = toy.GameObject;
+        }
 
         public Primitive(PrimitiveType type, Vector3 position, Color color,
                          Vector3 size = default, Vector3 rotation = default, bool collidable = false)
