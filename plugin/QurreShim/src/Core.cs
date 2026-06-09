@@ -8,6 +8,7 @@ using System.Linq;
 using System.Reflection;
 using Qurre.API.Attributes;
 using Qurre.Events.Structs;
+using UnityEngine;
 
 namespace Qurre.API
 {
@@ -22,6 +23,28 @@ namespace Qurre.API
         }
 
         static readonly Dictionary<Type, List<Entry>> _byType = new Dictionary<Type, List<Entry>>();
+        static readonly HashSet<string> _highRiskEvents = new HashSet<string>
+        {
+            nameof(RoundWaitingEvent), nameof(RoundStartEvent), nameof(RoundEndEvent),
+            nameof(RoundRestartEvent), nameof(RoundForceStartEvent), nameof(RoundCheckEvent),
+            nameof(JoinEvent), nameof(LeaveEvent), nameof(SpawnEvent), nameof(ChangeRoleEvent),
+            nameof(RemoteAdminCommandEvent), nameof(GameConsoleCommandEvent),
+            nameof(InteractDoorEvent), nameof(OpenDoorEvent), nameof(InteractLiftEvent),
+            nameof(InteractGeneratorEvent), nameof(Scp106AttackEvent),
+            nameof(AlphaStartEvent), nameof(AlphaStopEvent), nameof(AlphaDetonateEvent)
+        };
+
+        static readonly HashSet<string> _traceFields = new HashSet<string>
+        {
+            "Player", "Target", "Attacker", "Issuer", "Cuffer", "Scp", "New",
+            "Allowed", "Success", "FriendlyFire", "Active", "End",
+            "Reply", "Color", "Prefix", "Details", "Reason", "Name", "Message", "UserId", "Args",
+            "Sender", "Role", "OldRole", "Damage", "Position", "Level", "EnragedCount", "TotalCount",
+            "Door", "Winner", "Station", "Pickup", "Item", "NewItem", "OldItem", "Info", "Inventory",
+            "Corpse", "DamageInfo", "Generator", "Locker", "Lift", "Tesla", "JailbirdBase", "Setting",
+            "Chamber", "Consumption", "Status", "State", "LiteType", "DamageType", "Type", "Duration",
+            "Intensity"
+        };
 
         // ---- Жизненный цикл (вызывается из QurreBootstrap) ----
 
@@ -155,10 +178,41 @@ namespace Qurre.API
 
         public static T Dispatch<T>(T ev) where T : IBaseEvent
         {
-            if (_byType.TryGetValue(typeof(T), out var list))
+            Type eventType = typeof(T);
+            bool trace = ShouldTrace(eventType);
+
+            if (_byType.TryGetValue(eventType, out var list))
+            {
+                if (trace)
+                    Trace($"event {eventType.Name} begin handlers={list.Count} state={SnapshotLine(ev)}");
+
                 foreach (var e in list.ToArray())
-                    try { InvokeEntry(e, ev); }
-                    catch (Exception ex) { Log.Error($"Qurre-shim: хендлер {typeof(T).Name}: {ex.InnerException?.Message ?? ex.Message}"); }
+                    try
+                    {
+                        Dictionary<string, string> before = trace ? Snapshot(ev) : null;
+                        InvokeEntry(e, ev);
+
+                        if (trace)
+                        {
+                            Dictionary<string, string> after = Snapshot(ev);
+                            string diff = Diff(before, after);
+                            if (!string.IsNullOrEmpty(diff) || TraceEveryHandler)
+                                Trace($"event {eventType.Name} handler {e.Name} prio={e.Priority} {(string.IsNullOrEmpty(diff) ? "ok" : "changed " + diff)}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error($"Qurre-shim: handler {eventType.Name}: {ex.InnerException?.Message ?? ex.Message}");
+                    }
+
+                if (trace)
+                    Trace($"event {eventType.Name} end state={SnapshotLine(ev)}");
+            }
+            else if (trace)
+            {
+                Trace($"event {eventType.Name} begin handlers=0 state={SnapshotLine(ev)}");
+            }
+
             return ev;
         }
 
@@ -179,6 +233,161 @@ namespace Qurre.API
             var info = method?.Method;
             if (info == null) return "<delegate>";
             return $"{info.DeclaringType?.FullName}.{info.Name}";
+        }
+
+        static bool ShouldTrace(Type eventType)
+        {
+            if (eventType == null) return false;
+            if (EnvEnabled("FYDNE_TRACE_EVENTS")) return true;
+            if (EnvEnabled("FYDNE_TRACE_SPAWN") && (eventType == typeof(SpawnEvent) || eventType == typeof(ChangeRoleEvent))) return true;
+            return RecoveryMode && !EnvDisabled("FYDNE_TRACE_RECOVERY") && _highRiskEvents.Contains(eventType.Name);
+        }
+
+        static bool TraceEveryHandler => EnvEnabled("FYDNE_TRACE_EVERY_HANDLER");
+
+        static bool RecoveryMode => !EnvDisabled("FYDNE_RECOVERY_MODE");
+
+        static bool EnvEnabled(string name)
+        {
+            string value = Environment.GetEnvironmentVariable(name) ?? string.Empty;
+            return value == "1" || value.Equals("true", StringComparison.OrdinalIgnoreCase) || value.Equals("yes", StringComparison.OrdinalIgnoreCase) || value.Equals("on", StringComparison.OrdinalIgnoreCase);
+        }
+
+        static bool EnvDisabled(string name)
+        {
+            string value = Environment.GetEnvironmentVariable(name) ?? string.Empty;
+            return value == "0" || value.Equals("false", StringComparison.OrdinalIgnoreCase) || value.Equals("no", StringComparison.OrdinalIgnoreCase) || value.Equals("off", StringComparison.OrdinalIgnoreCase);
+        }
+
+        static Dictionary<string, string> Snapshot(object ev)
+        {
+            Dictionary<string, string> values = new Dictionary<string, string>(StringComparer.Ordinal);
+            if (ev == null) return values;
+
+            const BindingFlags flags = BindingFlags.Instance | BindingFlags.Public;
+            Type type = ev.GetType();
+
+            foreach (FieldInfo field in type.GetFields(flags))
+            {
+                if (!_traceFields.Contains(field.Name)) continue;
+                try { values[field.Name] = FormatValue(field.GetValue(ev)); }
+                catch (Exception ex) { values[field.Name] = $"<read-failed:{ex.GetType().Name}>"; }
+            }
+
+            foreach (PropertyInfo property in type.GetProperties(flags))
+            {
+                if (!_traceFields.Contains(property.Name) || property.GetIndexParameters().Length != 0) continue;
+                try { values[property.Name] = FormatValue(property.GetValue(ev)); }
+                catch (Exception ex) { values[property.Name] = $"<read-failed:{ex.GetType().Name}>"; }
+            }
+
+            return values;
+        }
+
+        static string SnapshotLine(object ev)
+        {
+            Dictionary<string, string> values = Snapshot(ev);
+            if (values.Count == 0) return "{}";
+            return "{" + string.Join(", ", values.OrderBy(x => x.Key, StringComparer.Ordinal).Select(x => $"{x.Key}={x.Value}")) + "}";
+        }
+
+        static string Diff(Dictionary<string, string> before, Dictionary<string, string> after)
+        {
+            if (before == null || after == null) return string.Empty;
+
+            List<string> changed = new List<string>();
+            foreach (string key in before.Keys.Union(after.Keys).OrderBy(x => x, StringComparer.Ordinal))
+            {
+                before.TryGetValue(key, out string oldValue);
+                after.TryGetValue(key, out string newValue);
+                if (!string.Equals(oldValue, newValue, StringComparison.Ordinal))
+                    changed.Add($"{key}:{oldValue}->{newValue}");
+            }
+
+            return string.Join("; ", changed);
+        }
+
+        static string FormatValue(object value)
+        {
+            if (value == null) return "null";
+
+            if (value is string text) return Quote(text);
+            if (value is bool boolean) return boolean ? "true" : "false";
+            if (value is Vector3 vector) return $"({vector.x:0.##},{vector.y:0.##},{vector.z:0.##})";
+            if (value is Quaternion rotation) return $"({rotation.eulerAngles.x:0.##},{rotation.eulerAngles.y:0.##},{rotation.eulerAngles.z:0.##})";
+            if (value is Array array) return "[" + string.Join(",", array.Cast<object>().Take(8).Select(FormatValue)) + (array.Length > 8 ? ",..." : "") + "]";
+
+            Type type = value.GetType();
+            if (type.FullName != null && type.FullName.Contains("Qurre.API.Player"))
+                return FormatPlayer(value);
+            if (type.Name.Contains("CommandSender"))
+                return FormatCommandSender(value);
+
+            string named = TryNamed(value);
+            if (!string.IsNullOrEmpty(named)) return named;
+
+            return Truncate(value.ToString(), 96);
+        }
+
+        static string FormatPlayer(object player)
+        {
+            try
+            {
+                object user = Prop(player, "UserInformation");
+                object role = Prop(player, "RoleInformation");
+                object movement = Prop(player, "MovementState");
+
+                string nickname = Prop(user, "Nickname")?.ToString() ?? "?";
+                string userId = Prop(user, "UserId")?.ToString() ?? "?";
+                string roleName = Prop(role, "Role")?.ToString() ?? "?";
+                string position = FormatValue(Prop(movement, "Position"));
+
+                return $"Player({Truncate(nickname, 32)}|{Truncate(userId, 48)}|{roleName}|{position})";
+            }
+            catch
+            {
+                return "Player(?)";
+            }
+        }
+
+        static string FormatCommandSender(object sender)
+        {
+            string nickname = Prop(sender, "Nickname")?.ToString() ?? Prop(sender, "LogName")?.ToString() ?? "?";
+            string senderId = Prop(sender, "SenderId")?.ToString() ?? "?";
+            return $"Sender({Truncate(nickname, 32)}|{Truncate(senderId, 48)})";
+        }
+
+        static string TryNamed(object value)
+        {
+            object name = Prop(value, "Name") ?? Prop(value, "Type") ?? Prop(value, "Role") ?? Prop(value, "ItemTypeId");
+            if (name == null) return string.Empty;
+            return $"{value.GetType().Name}({Truncate(name.ToString(), 64)})";
+        }
+
+        static object Prop(object obj, string name)
+        {
+            if (obj == null) return null;
+            const BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+            PropertyInfo property = obj.GetType().GetProperty(name, flags);
+            if (property == null || property.GetIndexParameters().Length != 0) return null;
+            try { return property.GetValue(obj); }
+            catch { return null; }
+        }
+
+        static string Quote(string value)
+        {
+            return "\"" + Truncate((value ?? string.Empty).Replace("\r", "\\r").Replace("\n", "\\n"), 96) + "\"";
+        }
+
+        static string Truncate(string value, int max)
+        {
+            if (string.IsNullOrEmpty(value) || value.Length <= max) return value ?? string.Empty;
+            return value.Substring(0, Math.Max(0, max - 3)) + "...";
+        }
+
+        static void Trace(string message)
+        {
+            Log.Custom(message, "FYDNE-TRACE", ConsoleColor.DarkGray);
         }
     }
 }

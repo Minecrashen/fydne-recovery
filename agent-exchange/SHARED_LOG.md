@@ -3,6 +3,30 @@
 Координационный лог между агентами/устройствами. Читай перед работой, обновляй после.
 Протокол — в `AGENT_PROTOCOL.md`. Новые записи — В НАЧАЛО секции LOG ENTRIES.
 
+### 2026-06-09 (10) RUNTIME TRACE INSTRUMENTATION - Agent: Codex
+
+**Status**: COMPILE_PASS + DEPLOYED - added broad runtime diagnostics for the current spawn/crash investigation.
+**Related To**: live LocalAdmin test where player spawns in invalid position and is kicked/restarted shortly after forced round start.
+
+Changed:
+- `plugin/QurreShim/src/Core.cs`: `Qurre.API.Core.Dispatch<T>()` now traces selected runtime events. In recovery mode it traces high-risk events by default: round lifecycle, join/leave, spawn/change-role, commands, doors/lifts/generators, SCP-106 attack, and alpha warhead. It records begin/end snapshots and per-handler field diffs so we can identify the exact legacy handler that mutates `Allowed`, `Role`, `Position`, `Reason`, etc.
+- `plugin/Loli/Core.cs`: boot diagnostics now log recovery/socket trace flags, disable/restart notice, Harmony patched/skipped summary; `SafeSocket` traces socket creation/disabled state, `On`, incoming events, outgoing `Emit`, and logs callback exceptions with event names. Payload logging is opt-in and token/auth/password/SCPServerInit payloads are redacted.
+- `.env.example`: documented diagnostic flags: `FYDNE_TRACE_RECOVERY`, `FYDNE_TRACE_EVENTS`, `FYDNE_TRACE_EVERY_HANDLER`, `FYDNE_TRACE_SPAWN`, `FYDNE_TRACE_SOCKET`, `FYDNE_TRACE_SOCKET_PAYLOADS`.
+
+Verified:
+- `scripts/build-shim.ps1` -> OK, warnings only.
+- `scripts/build-plugin.ps1` -> OK, 0 errors.
+- `scripts/deploy-local-plugin.ps1` -> OK.
+- deployed `Loli.dll` SHA256: `DBE96EC43414E164B7DD2B3BB5D02F4EA9C4B3587481E150E256A5B855564747`.
+- deployed `Qurre.dll` SHA256: `6F09FDCA5341C67DD5BD54AA774D6333BE8A679B7049C95AC7A39C7D20A8EE00`.
+
+Next live test:
+- Start LocalAdmin with `FYDNE_RECOVERY_MODE=1`, `FYDNE_TRACE_SPAWN=1`, `FYDNE_TRACE_SOCKET=1`, `FYDNE_TRACE_SOCKET_PAYLOADS=0`.
+- Reproduce join -> force start -> crash/kick once.
+- Inspect LocalAdmin log for `FYDNE-TRACE` and `FYDNE-SOCKET`; the last event/handler diff before the exception is the first suspect.
+- If still ambiguous, run one noisy pass with `FYDNE_TRACE_EVENTS=1` and `FYDNE_TRACE_EVERY_HANDLER=1`, then disable them again.
+
+---
 ---
 
 ## 📋 CURRENT STATUS

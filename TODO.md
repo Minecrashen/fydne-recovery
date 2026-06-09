@@ -9,6 +9,34 @@
 
 ---
 
+## 2026-06-09 Codex pass: runtime trace instrumentation
+
+- [x] Added QurreShim event tracing in `Qurre.API.Core.Dispatch<T>()`.
+  - Recovery mode traces high-risk events by default: round lifecycle, join/leave, spawn/role, commands, doors/lifts/generators, SCP-106 attack, alpha warhead.
+  - `FYDNE_TRACE_EVENTS=1` traces every bridged event.
+  - `FYDNE_TRACE_SPAWN=1` forces focused `SpawnEvent`/`ChangeRoleEvent` tracing.
+  - `FYDNE_TRACE_EVERY_HANDLER=1` logs every handler even when it does not mutate the event.
+  - Trace records event begin/end state and per-handler diffs for fields like `Player`, `Role`, `OldRole`, `Position`, `Allowed`, `Reason`, `Message`, `Args`, `Damage`, `Door`, `Generator`, `Lift`, etc.
+- [x] Added socket tracing in `Loli.Core.SafeSocket`.
+  - Logs socket client creation/disabled state, subscriptions, incoming events and outgoing emits.
+  - `FYDNE_TRACE_SOCKET=1` enables socket trace; recovery mode enables safe socket trace by default unless set to `0`.
+  - `FYDNE_TRACE_SOCKET_PAYLOADS=1` prints bounded payloads; sensitive events such as `SCPServerInit`/token/auth/password are redacted.
+  - Socket callback exceptions are now logged with event names instead of silently breaking the callback path.
+- [x] Added boot diagnostics: recovery/socket trace flags on enable, disable/restart notice, and Harmony patch pass `patched/skipped` summary.
+- [x] Added diagnostic env flags to `.env.example`.
+- [x] Rebuilt and deployed local plugin binaries:
+  - `scripts/build-shim.ps1` -> OK, warnings only.
+  - `scripts/build-plugin.ps1` -> OK, 0 errors.
+  - `scripts/deploy-local-plugin.ps1` -> OK.
+  - deployed `Loli.dll` SHA256: `DBE96EC43414E164B7DD2B3BB5D02F4EA9C4B3587481E150E256A5B855564747`.
+  - deployed `Qurre.dll` SHA256: `6F09FDCA5341C67DD5BD54AA774D6333BE8A679B7049C95AC7A39C7D20A8EE00`.
+
+Next test:
+- [ ] Start LocalAdmin with `FYDNE_RECOVERY_MODE=1`.
+- [ ] For focused crash debugging, set `FYDNE_TRACE_SPAWN=1`, `FYDNE_TRACE_SOCKET=1`, keep `FYDNE_TRACE_SOCKET_PAYLOADS=0`.
+- [ ] If the crash/kick is still unclear, temporarily set `FYDNE_TRACE_EVENTS=1` and `FYDNE_TRACE_EVERY_HANDLER=1`, reproduce once, then turn them back off because logs will be huge.
+- [ ] After a crash/restart, inspect LocalAdmin logs for `FYDNE-TRACE`, `FYDNE-SOCKET`, `SpawnEvent`, `ChangeRoleEvent`, `RoundStartEvent`, handler diffs and first exception after the last trace line.
+
 ## 2026-06-09 Codex pass: live spawn disconnect loop
 
 - [x] Fresh LocalAdmin logs inspected. The newest available log still showed the old deployed build before `FixOnePrimitiveSmoothing`: more than 37k `RuntimeBinderException` entries from `Loli.FixOnePrimitiveSmoothing.Update`.

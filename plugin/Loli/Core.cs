@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using HarmonyLib;
 using Loli.Addons;
 using Loli.Configs;
@@ -55,6 +56,25 @@ namespace Loli
                 return value == "1" || value.Equals("true", System.StringComparison.OrdinalIgnoreCase) || value.Equals("yes", System.StringComparison.OrdinalIgnoreCase);
             }
         }
+        static internal bool TraceSocket
+        {
+            get
+            {
+                string value = System.Environment.GetEnvironmentVariable("FYDNE_TRACE_SOCKET") ?? string.Empty;
+                if (value == "0" || value.Equals("false", System.StringComparison.OrdinalIgnoreCase) || value.Equals("no", System.StringComparison.OrdinalIgnoreCase) || value.Equals("off", System.StringComparison.OrdinalIgnoreCase))
+                    return false;
+
+                return RecoveryMode || value == "1" || value.Equals("true", System.StringComparison.OrdinalIgnoreCase) || value.Equals("yes", System.StringComparison.OrdinalIgnoreCase) || value.Equals("on", System.StringComparison.OrdinalIgnoreCase);
+            }
+        }
+        static internal bool TraceSocketPayloads
+        {
+            get
+            {
+                string value = System.Environment.GetEnvironmentVariable("FYDNE_TRACE_SOCKET_PAYLOADS") ?? string.Empty;
+                return value == "1" || value.Equals("true", System.StringComparison.OrdinalIgnoreCase) || value.Equals("yes", System.StringComparison.OrdinalIgnoreCase) || value.Equals("on", System.StringComparison.OrdinalIgnoreCase);
+            }
+        }
         static internal string APIUrl => System.Environment.GetEnvironmentVariable("FYDNE_API_URL") ?? string.Empty;
 
 #if MRP
@@ -81,6 +101,8 @@ namespace Loli
         [PluginEnable]
         static internal void Enable()
         {
+            Log.Custom($"Enable recovery={RecoveryMode} socketEnabled={SocketEnabled} traceSocket={TraceSocket} traceSocketPayloads={TraceSocketPayloads}", "FYDNE-BOOT", System.ConsoleColor.Green);
+
             ConfigsCore ??= new JsonConfig("Loli");
             WebHooks = ConfigsCore.SafeGetValue("WebHooks", new WebHooks());
 
@@ -134,23 +156,32 @@ namespace Loli
 
         [PluginDisable]
         static internal void Disable()
-            => Server.Restart();
+        {
+            Log.Custom("Disable requested; restarting server", "FYDNE-BOOT", System.ConsoleColor.Yellow);
+            Server.Restart();
+        }
 
         static void PatchAllSafely()
         {
             Harmony harmony = new("fydne.loli");
+            int patched = 0;
+            int skipped = 0;
 
             foreach (System.Type type in typeof(Core).Assembly.GetTypes())
             {
                 try
                 {
                     harmony.CreateClassProcessor(type).Patch();
+                    patched++;
                 }
                 catch (System.Exception ex)
                 {
+                    skipped++;
                     Log.Error($"Harmony patch skipped: {type.FullName}: {ex.GetType().Name}: {ex.Message}");
                 }
             }
+
+            Log.Custom($"Harmony patch pass finished patched={patched} skipped={skipped}", "FYDNE-BOOT", System.ConsoleColor.Green);
         }
 
         internal sealed class SafeSocket
@@ -163,11 +194,15 @@ namespace Loli
             {
                 _enabled = SocketEnabled;
                 if (!_enabled)
+                {
+                    Trace($"disabled target={ip}:{port}");
                     return;
+                }
 
                 try
                 {
                     _inner = new QurreSocket.Client(port, ip);
+                    Trace($"created target={ip}:{port}");
                 }
                 catch (System.Exception ex)
                 {
@@ -183,7 +218,19 @@ namespace Loli
 
                 try
                 {
-                    return _inner.On(eventName, action);
+                    Trace($"on {eventName}");
+                    return _inner.On(eventName, data =>
+                    {
+                        Trace($"<= {eventName} {FormatArgs(eventName, data)}");
+                        try
+                        {
+                            action(data);
+                        }
+                        catch (System.Exception ex)
+                        {
+                            Log.Error($"QurreSocket handler failed ({eventName}): {ex.GetType().Name}: {ex.Message}");
+                        }
+                    });
                 }
                 catch (System.Exception ex)
                 {
@@ -214,12 +261,59 @@ namespace Loli
 
                 try
                 {
+                    Trace($"=> {eventName} {FormatArgs(eventName, data)}");
                     _inner.Emit(eventName, data);
                 }
                 catch (System.Exception ex)
                 {
                     Log.Error($"QurreSocket.Emit skipped ({eventName}): {ex.GetType().Name}: {ex.Message}");
                 }
+            }
+
+            static void Trace(string message)
+            {
+                if (TraceSocket)
+                    Log.Custom(message, "FYDNE-SOCKET", System.ConsoleColor.DarkCyan);
+            }
+
+            static string FormatArgs(string eventName, object[] data)
+            {
+                if (data == null) return "args=null";
+                if (!TraceSocketPayloads) return $"args={data.Length}";
+
+                bool sensitiveEvent = IsSensitive(eventName);
+                return "args=[" + string.Join(", ", data.Take(8).Select((value, index) => FormatValue(value, sensitiveEvent || index == 0 && eventName == "SCPServerInit"))) + (data.Length > 8 ? ", ..." : "") + "]";
+            }
+
+            static bool IsSensitive(string eventName)
+            {
+                if (string.IsNullOrEmpty(eventName)) return false;
+                return eventName.IndexOf("token", System.StringComparison.OrdinalIgnoreCase) >= 0
+                    || eventName.IndexOf("auth", System.StringComparison.OrdinalIgnoreCase) >= 0
+                    || eventName.IndexOf("password", System.StringComparison.OrdinalIgnoreCase) >= 0
+                    || eventName.IndexOf("SCPServerInit", System.StringComparison.OrdinalIgnoreCase) >= 0;
+            }
+
+            static string FormatValue(object value, bool redact)
+            {
+                if (redact) return "<redacted>";
+                if (value == null) return "null";
+                if (value is string text) return Quote(text);
+                if (value is System.Array array)
+                    return "[" + string.Join(",", array.Cast<object>().Take(8).Select(x => FormatValue(x, false))) + (array.Length > 8 ? ",..." : "") + "]";
+
+                return Truncate(value.ToString(), 96);
+            }
+
+            static string Quote(string value)
+            {
+                return "\"" + Truncate((value ?? string.Empty).Replace("\r", "\\r").Replace("\n", "\\n"), 96) + "\"";
+            }
+
+            static string Truncate(string value, int max)
+            {
+                if (string.IsNullOrEmpty(value) || value.Length <= max) return value ?? string.Empty;
+                return value.Substring(0, System.Math.Max(0, max - 3)) + "...";
             }
         }
 
