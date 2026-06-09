@@ -18,7 +18,11 @@ namespace SchematicUnity.API
             scheme.Position = position;
             scheme.Rotation = rotation.eulerAngles;
 
-            if (!File.Exists(path)) return scheme;
+            if (!File.Exists(path))
+            {
+                Qurre.API.Log.Warn($"Schematic missing: {path}");
+                return scheme;
+            }
 
             try
             {
@@ -62,6 +66,7 @@ namespace SchematicUnity.API
             {
             }
 
+            Qurre.API.Log.Custom($"Schematic loaded: {path} objects={scheme.Objects.Count}", "FYDNE-BUILD", System.ConsoleColor.DarkCyan);
             return scheme;
         }
 

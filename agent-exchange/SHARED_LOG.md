@@ -3,6 +3,36 @@
 Координационный лог между агентами/устройствами. Читай перед работой, обновляй после.
 Протокол — в `AGENT_PROTOCOL.md`. Новые записи — В НАЧАЛО секции LOG ENTRIES.
 
+### 2026-06-09 (12) ADMIN WAITING ROOM FALLBACK - Agent: Codex
+
+**Status**: COMPILE_PASS + DEPLOYED - restored a minimal waiting/admin room without original schematic assets.
+**Related To**: user live test: waiting spawn in air, visually broken spawns, black screen after a while, request to restore at least the start waiting/admin zone.
+
+Findings from `LocalAdmin Log 2026-06-09 22.46.52.txt`:
+- `Qurre-Shim` loaded and enabled successfully.
+- `Loli.Enable()` ran: `FYDNE-BOOT Enable recovery=True socketEnabled=True traceSocket=True`.
+- Event registry active: 60 event types / 282 handlers.
+- `AdminRoom` was active and moved Tutorial waiting spawn to `(130.26,305.42,102.88)`.
+- Old schematic assets are missing locally: no `AdminRoom.json`, `Range.json`, `Waiting_Room.json`, or `Schemes/` assets found. The loader returned empty schemes, so spawn points existed without the original floor/walls/colliders.
+
+Changed:
+- `plugin/Loli/Builds/Models/Rooms/AdminRoom.cs`: added a code-level recovery shell made from native AdminToys primitives. It creates a lower tutorial platform, upper waiting platform, collidable floor/walls, accents, glass/front panel and lights. It keeps the legacy waiting/tutorial spawn points.
+- `plugin/QurreShim/src/Addons/SchematicJsonLoader.cs`: missing files now log `Schematic missing: <path>` and successfully parsed files log `Schematic loaded: <path> objects=<count>`.
+
+Verified:
+- `scripts/build-shim.ps1` -> OK, warnings only.
+- `scripts/build-plugin.ps1` -> OK, 0 errors.
+- `scripts/deploy-local-plugin.ps1` -> OK.
+- deployed `Loli.dll` SHA256: `3326CC4E306AD633CB5FBAED063EC6F9444F1A07FB0FCEED014FD8BBBC4B3D83`.
+- deployed `Qurre.dll` SHA256: `FDC7535861D64131D0B66108E869D45B99D318B130BA0FE3D0772A3C74479A9F`.
+
+Next live test:
+- Fully restart LocalAdmin; DLL hot-reload is not enough.
+- Join while the server is waiting for players and confirm the Tutorial waiting spawn lands on the visible recovery shell.
+- Check logs for `AdminRoom recovery shell spawned` and `Schematic missing: ...AdminRoom.json`.
+- If visible but ugly/dark, tune fallback primitive colors/positions before attempting a full SchematicUnity recreation.
+
+---
 ### 2026-06-09 (11) PRE-TEST SPAWN BRIDGE HARDENING - Agent: Codex
 
 **Status**: COMPILE_PASS + DEPLOYED - static hardening before the next live LocalAdmin test.

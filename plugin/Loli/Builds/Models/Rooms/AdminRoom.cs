@@ -107,6 +107,7 @@ static class AdminRoom
         //Model hczRoom = new("HCZ_Room", hcz.Position + Vector3.up * 40, hcz.Rotation.eulerAngles);
         Model hczRoom = new("HCZ_Room", new(130.26f, 300.81f, 101.3f));
         Model model = new("AdminRoom_Objects", Vector3.zero, Vector3.zero, hczRoom);
+        AddRecoveryShell(model);
         model.AddPart(new ModelWorkStation(model, new(-5.38f, 2.586f, -3.5f), Vector3.zero, Vector3.one));
 
         model.AddPart(new ModelTarget(model, TargetPrefabs.Sport, new(13.964f, 2.62f, 17.223f), new(0, -50),
@@ -223,6 +224,47 @@ static class AdminRoom
 
         }
 
+    }
+
+    static void AddRecoveryShell(Model model)
+    {
+        Color32 floor = new(62, 64, 68, 255);
+        Color32 wall = new(118, 122, 130, 255);
+        Color32 accent = new(34, 39, 46, 255);
+        Color32 glass = new(80, 140, 180, 90);
+
+        AddBox(model, floor, new(0, 0.82f, 0), Vector3.zero, new(20, 0.22f, 18), true);
+        AddBox(model, wall, new(0, 2.95f, 9), Vector3.zero, new(20, 4.4f, 0.28f), true);
+        AddBox(model, wall, new(0, 2.95f, -9), Vector3.zero, new(20, 4.4f, 0.28f), true);
+        AddBox(model, wall, new(10, 2.95f, 0), Vector3.zero, new(0.28f, 4.4f, 18), true);
+        AddBox(model, wall, new(-10, 2.95f, 0), Vector3.zero, new(0.28f, 4.4f, 18), true);
+
+        AddBox(model, floor, new(0, 4.04f, 1.6f), Vector3.zero, new(16, 0.22f, 12), true);
+        AddBox(model, accent, new(0, 6.15f, 7.6f), Vector3.zero, new(16, 4.2f, 0.22f), true);
+        AddBox(model, accent, new(8, 6.15f, 1.6f), Vector3.zero, new(0.22f, 4.2f, 12), true);
+        AddBox(model, accent, new(-8, 6.15f, 1.6f), Vector3.zero, new(0.22f, 4.2f, 12), true);
+        AddBox(model, accent, new(0, 8.2f, 1.6f), Vector3.zero, new(16, 0.18f, 12), false);
+
+        AddBox(model, glass, new(0, 5.7f, -4.2f), Vector3.zero, new(12, 2.6f, 0.12f), false);
+        AddBox(model, accent, new(0, 4.45f, -4.2f), Vector3.zero, new(12, 0.18f, 0.16f), true);
+        AddBox(model, accent, new(0, 6.95f, -4.2f), Vector3.zero, new(12, 0.18f, 0.16f), true);
+        AddBox(model, accent, new(-6, 5.7f, -4.2f), Vector3.zero, new(0.18f, 2.6f, 0.16f), true);
+        AddBox(model, accent, new(6, 5.7f, -4.2f), Vector3.zero, new(0.18f, 2.6f, 0.16f), true);
+
+        AddBox(model, new Color32(80, 80, 86, 255), new(-7, 1.3f, -5.8f), Vector3.zero, new(4, 0.42f, 2), true);
+        AddBox(model, new Color32(80, 80, 86, 255), new(7, 1.3f, -5.8f), Vector3.zero, new(4, 0.42f, 2), true);
+
+        model.AddPart(new ModelLight(model, new Color32(235, 244, 255, 255), new(0, 7.55f, 1.5f), lightIntensity: 1.2f, lightRange: 22));
+        model.AddPart(new ModelLight(model, new Color32(210, 235, 255, 255), new(0, 3.7f, -2.5f), lightIntensity: 0.85f, lightRange: 16));
+
+        Log.Custom("AdminRoom recovery shell spawned: fallback primitives are active even if AdminRoom.json is missing.", "FYDNE-BUILD", System.ConsoleColor.DarkCyan);
+    }
+
+    static ModelPrimitive AddBox(Model model, Color color, Vector3 position, Vector3 rotation, Vector3 scale, bool collidable)
+    {
+        ModelPrimitive primitive = new(model, PrimitiveType.Cube, color, position, rotation, scale, collidable);
+        primitive.Primitive.IsStatic = true;
+        return primitive;
     }
 
 

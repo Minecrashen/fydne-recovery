@@ -9,6 +9,38 @@
 
 ---
 
+## 2026-06-09 Codex pass: admin waiting room fallback
+
+- [x] Inspected the live test log from `LocalAdmin Log 2026-06-09 22.46.52.txt`.
+  - `Qurre-Shim` did load and enable.
+  - `Loli.Enable()` ran: `FYDNE-BOOT Enable recovery=True socketEnabled=True traceSocket=True`.
+  - Event registry was active: 60 event types / 282 handlers.
+  - `RoundWaitingEvent` had 68 handlers, `SpawnEvent` had 29 handlers.
+  - `AdminRoom` was active and changed the waiting tutorial spawn from vanilla `(40,314.08,-32.6)` to `(130.26,305.42,102.88)`.
+- [x] Root cause for broken admin/waiting room visuals: old schematic files are absent locally.
+  - No `AdminRoom.json`, `Range.json`, `Waiting_Room.json`, or `Schemes/` assets were found in the repo, Downloads, or server plugin directory.
+  - Existing `SchematicJsonLoader` returned an empty `Scheme` when a file was missing, so spawn points existed but the room floor/walls from the original schematic did not.
+- [x] Added a code-level fallback room in `plugin/Loli/Builds/Models/Rooms/AdminRoom.cs`.
+  - Builds a minimal lower tutorial platform and upper waiting platform from native AdminToys primitives.
+  - Adds collidable floor/walls, ceiling accents, glass/front panel and lights.
+  - Keeps the current `WaitingSpawnPoint` and `TutorialSpawnPoint`, so legacy waiting-room flow still works.
+  - Logs `AdminRoom recovery shell spawned` under `FYDNE-BUILD`.
+- [x] Added missing/loaded schematic diagnostics in `plugin/QurreShim/src/Addons/SchematicJsonLoader.cs`.
+  - Missing files now log `Schematic missing: <path>`.
+  - Loaded files log `Schematic loaded: <path> objects=<count>`.
+- [x] Rebuilt and deployed local plugin binaries:
+  - `scripts/build-shim.ps1` -> OK, warnings only.
+  - `scripts/build-plugin.ps1` -> OK, 0 errors.
+  - `scripts/deploy-local-plugin.ps1` -> OK.
+  - deployed `Loli.dll` SHA256: `3326CC4E306AD633CB5FBAED063EC6F9444F1A07FB0FCEED014FD8BBBC4B3D83`.
+  - deployed `Qurre.dll` SHA256: `FDC7535861D64131D0B66108E869D45B99D318B130BA0FE3D0772A3C74479A9F`.
+
+Next test additions:
+- [ ] Fully restart LocalAdmin; DLL hot-reload is not enough.
+- [ ] Join during waiting state and confirm the tutorial waiting spawn lands on a visible `FYDNE-BUILD` recovery shell, not in empty air.
+- [ ] Inspect logs for `AdminRoom recovery shell spawned` and `Schematic missing: ...AdminRoom.json`.
+- [ ] If the room is visible but too dark/awkward, tune fallback primitive colors/positions before attempting full SchematicUnity recreation.
+
 ## 2026-06-09 Codex pass: pre-test spawn bridge hardening
 
 - [x] Found a static bridge bug: `SpawnEvent` and `ChangeRoleEvent` were dispatched twice, once from LabAPI pre-events (`Spawning`/`ChangingRole`) and again from post-events (`Spawned`/`ChangedRole`).
