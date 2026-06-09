@@ -20,6 +20,7 @@ obj/
 *.dump
 *.archive
 dump/
+backend/fydne-socket/data/
 
 # Local work directories
 sources/

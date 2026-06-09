@@ -485,3 +485,51 @@ Remaining:
 - `HideRaAuth` still logs `Index - 0 < 0`; it is skipped/fallback-safe but not ported.
 - `AutoModeration.SaveLogs` target method still does not resolve and is skipped.
 - Missing original `Schemes/*.json` assets mean some old FYDNE builds are degraded or absent until assets are restored or rebuilt natively.
+
+---
+
+### 2026-06-09 (15) FOUNDER DATA LOST + REPLACEMENT SOCKET BACKEND - Agent: Codex
+
+Status: SOCKET_BACKEND_FIRST_PASS - original FYDNE external state is treated as lost; a new QurreSocket-compatible backend now exists and passes standalone protocol and LocalAdmin startup integration smoke.
+
+Context:
+- User contacted the FYDNE founder.
+- Founder reported that nothing was preserved: no database dump, no original backend state, no recoverable project data/assets.
+- Recovery strategy is now replacement-first, not restoration-first.
+
+Changed:
+- Added `Core.RecoveryMode`, controlled by `FYDNE_RECOVERY_MODE` and defaulting to enabled for current recovery builds.
+- Fixed force-start double-start path:
+  - `Waiting.Coroutine` no longer calls `Round.Start()` after force-start or after the server has already left waiting state.
+- Added one-player local test support:
+  - In recovery mode, `RoundCheck` returns `End=false` for <=1 non-host players so local force-start testing is not immediately ended by FYDNE win conditions.
+  - Future public deployments should set `FYDNE_RECOVERY_MODE=0`.
+- Added real first-stage replacement backend under `backend/fydne-socket`:
+  - Node TCP server on port `2467`.
+  - Legacy QurreSocket frame format: `JSON.stringify({ ev, args }) + "⋠"`.
+  - Persistent JSON store: `backend/fydne-socket/data/store.json`.
+  - Handles: `SCPServerInit`, `database.get.data`, `database.get.stats`, `database.add.stats`, `database.internal.unsafe.set_level`, `database.get.adm.steams`, `database.get.donate.roles`, `database.get.donate.customize`, `database.get.donate.ra`, `database.get.nitro`, `database.get.patrol`, `server.database.clans`, `server.clearips`, `server.addip`, `server.leave`, `server.tps`, and admin audit events as accepted no-ops.
+- Added `scripts/start-fydne-socket.ps1`.
+- Updated `.env.example` with socket and recovery-mode variables.
+- Updated `.gitignore` to exclude `backend/fydne-socket/data/`.
+
+Verified:
+- `scripts/deploy-local-plugin.ps1 -Build` -> OK and deployed.
+- `node --check backend/fydne-socket/server.js` -> OK.
+- Standalone protocol test -> OK: backend responded to connect/init/get data/add stats/get stats/donate roles/clans and persisted JSON store.
+- LocalAdmin integration smoke with real socket enabled:
+  - `FYDNE_SOCKET_ENABLED=1`
+  - `FYDNE_SOCKET_IP=127.0.0.1`
+  - log: `%APPDATA%\SCP Secret Laboratory\LocalAdminLogs\7777\LocalAdmin Log 2026-06-09 17.22.39.txt`
+  - `Connected to Socket=2`
+  - `Waiting for players=1`
+  - `TypeLoadException=0`
+  - `MissingMethodException=0`
+  - `NullReferenceException=0`
+  - `handler .*: Object reference=0`
+  - `QurreSocket.NetSocket.Send=0`
+
+Remaining:
+- User needs to retest join + force-start with `backend/fydne-socket` running and socket env enabled.
+- Missing original schematics must be rebuilt; no founder source remains.
+- Backend is intentionally JSON-first. Move to SQLite/PostgreSQL only after gameplay loop is stable.

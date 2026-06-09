@@ -26,6 +26,9 @@ namespace Loli.Modules
             {
                 ev.End = false;
 
+                if (Core.RecoveryMode && Player.List.Count(x => !x.IsHost) <= 1)
+                    return;
+
                 RoundSummary.SumInfo_ClassList list = default;
                 int sh = 0;
                 bool checkAlive = Round.ElapsedTime.TotalMinutes > 5 && Player.List.Count() > 5;

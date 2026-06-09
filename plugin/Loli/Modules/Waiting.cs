@@ -89,9 +89,15 @@ namespace Loli.Modules
                     yield return Timing.WaitForSeconds(0.5f);
                 }
 
+                if (!allowSpawn || !Round.Waiting)
+                    yield break;
+
                 StartedClear();
 
                 yield return Timing.WaitForSeconds(0.5f);
+
+                if (!Round.Waiting)
+                    yield break;
 
                 Round.Start();
 

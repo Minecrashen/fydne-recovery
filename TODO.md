@@ -311,3 +311,37 @@ Next runtime gate:
 Next retest:
 - [ ] Start server, join as player, force start again.
 - [ ] If it still returns to idle, inspect whether it is vanilla solo-player round-end/idle behavior or a remaining plugin event after `RoundStart`.
+
+---
+
+## 2026-06-09 Codex pass: founder data lost, replacement socket backend begins
+
+- [x] Founder confirmed no original FYDNE data/assets were preserved. Treat old MongoDB dumps, socket backend, and original `Schemes/*.json` as lost.
+- [x] Strategy changed from "restore original external state" to "build compatible replacements":
+  - new QurreSocket-compatible backend;
+  - new local persistent player store;
+  - rebuilt schematics/builds later;
+  - old public progress cannot be recovered unless players manually re-seed it.
+- [x] Fixed force-start lifecycle issue:
+  - `Waiting.Coroutine` no longer calls `Round.Start()` after a manual/vanilla force-start already left waiting state.
+  - `FYDNE_RECOVERY_MODE=1` now prevents FYDNE `RoundCheck` from ending a one-player local test round immediately.
+  - For future public servers, set `FYDNE_RECOVERY_MODE=0`.
+- [x] Added real first-stage socket backend:
+  - `backend/fydne-socket/server.js`
+  - TCP port `2467`;
+  - legacy frame format `{ ev, args } + "⋠"`;
+  - persistent JSON store at `backend/fydne-socket/data/store.json`;
+  - users, XP, money, admins, online sessions, TPS;
+  - safe empty donate/customize/clan/patrol responses.
+- [x] Added `scripts/start-fydne-socket.ps1`.
+- [x] Updated `.env.example` with `FYDNE_SOCKET_ENABLED`, `FYDNE_RECOVERY_MODE`, and backend socket settings.
+- [x] Verification:
+  - `node --check backend/fydne-socket/server.js` OK.
+  - standalone TCP protocol test OK: create user, add stats, get stats, donate roles, clans.
+  - integration smoke with `FYDNE_SOCKET_ENABLED=1`: `Connected to Socket=2`, `Waiting for players=1`, no TypeLoad/MissingMethod/NRE/handler errors.
+
+Next:
+- [ ] User retest: start `backend/fydne-socket`, then start SCP:SL with socket env enabled, join, force start.
+- [ ] If solo round still enters idle, inspect newest log after socket-enabled retest.
+- [ ] Replace missing `Schemes/*.json` with native LabAPI/AdminToy builds or new authored JSON.
+- [ ] Expand backend from JSON to SQLite/PostgreSQL only after plugin gameplay loop is stable.

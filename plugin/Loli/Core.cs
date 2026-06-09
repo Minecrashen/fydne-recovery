@@ -39,6 +39,14 @@ namespace Loli
         static internal string ApiToken => System.Environment.GetEnvironmentVariable("FYDNE_API_TOKEN") ?? string.Empty;
         static internal string SteamToken => System.Environment.GetEnvironmentVariable("FYDNE_STEAM_WEB_API_KEY") ?? string.Empty;
         static internal string SocketIP => System.Environment.GetEnvironmentVariable("FYDNE_SOCKET_IP") ?? "127.0.0.1";
+        static internal bool RecoveryMode
+        {
+            get
+            {
+                string value = System.Environment.GetEnvironmentVariable("FYDNE_RECOVERY_MODE") ?? "1";
+                return value != "0" && !value.Equals("false", System.StringComparison.OrdinalIgnoreCase) && !value.Equals("no", System.StringComparison.OrdinalIgnoreCase);
+            }
+        }
         static internal bool SocketEnabled
         {
             get
