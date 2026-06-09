@@ -270,10 +270,50 @@ namespace Qurre.API
     {
         readonly Lab.Player p;
         public MovementStateW(Lab.Player b) { p = b; }
-        public Vector3 Position { get => p.Position; set => p.Position = value; }
-        public Vector3 Scale { get => p.Scale; set => p.Scale = value; }
-        public Vector3 Rotation { get => p.Rotation.eulerAngles; set => p.Rotation = Quaternion.Euler(value); }
-        public Transform Transform => p.GameObject.transform;
+        public Vector3 Position
+        {
+            get
+            {
+                try { return p?.Position ?? Vector3.zero; }
+                catch { return Vector3.zero; }
+            }
+            set
+            {
+                try { if (p != null) p.Position = value; } catch { }
+            }
+        }
+        public Vector3 Scale
+        {
+            get
+            {
+                try { return p?.Scale ?? Vector3.one; }
+                catch { return Vector3.one; }
+            }
+            set
+            {
+                try { if (p != null) p.Scale = value; } catch { }
+            }
+        }
+        public Vector3 Rotation
+        {
+            get
+            {
+                try { return p?.Rotation.eulerAngles ?? Vector3.zero; }
+                catch { return Vector3.zero; }
+            }
+            set
+            {
+                try { if (p != null) p.Rotation = Quaternion.Euler(value); } catch { }
+            }
+        }
+        public Transform Transform
+        {
+            get
+            {
+                try { return p?.GameObject?.transform; }
+                catch { return null; }
+            }
+        }
     }
 
     public class GamePlayW

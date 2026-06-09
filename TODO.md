@@ -292,3 +292,22 @@ Next runtime gate:
 - [ ] If crash remains, collect the newest `%APPDATA%\SCP Secret Laboratory\LocalAdminLogs\7777\LocalAdmin Log *.txt` and fix the first post-16:53 gameplay exception batch.
 - [ ] Port or disable remaining Harmony problems: `HideRaAuth` and `AutoModeration.SaveLogs`.
 - [ ] Restore real FYDNE schematic JSON assets (`Schemes/*.json`) or replace missing builds with native AdminToy/LabAPI implementations.
+
+---
+
+## 2026-06-09 Codex pass: first player force-start log cleanup
+
+- [x] Inspected user force-start log:
+  `%APPDATA%\SCP Secret Laboratory\LocalAdminLogs\7777\LocalAdmin Log 2026-06-09 16.59.09.txt`.
+- [x] Found that server reached `New round has been started`, then `Server has entered the idle mode`.
+- [x] Found remaining repeated handler failure:
+  `SpawnEvent::Loli.Scps.Scp0492Better.Spawn: Object reference not set`.
+- [x] Made `MovementStateW` null-safe so legacy position/scale/rotation reads do not throw when LabAPI player state is not ready or already destroyed.
+- [x] Hardened `Scp0492Better` spawn/damage/delayed zombie mutation paths against destroyed players and missing role/tag/movement/effects state.
+- [x] Removed noisy `FIX NW #...` and ping debug spam from `Fixes.CheckPlayersPing`; reconnect logic remains.
+- [x] Verification: `scripts/deploy-local-plugin.ps1 -Build` OK and deployed.
+- [x] Startup smoke after fix: `LocalAdmin Log 2026-06-09 17.04.46.txt` reaches `Waiting for players`; no startup handler NRE; no `FIX NW` flood.
+
+Next retest:
+- [ ] Start server, join as player, force start again.
+- [ ] If it still returns to idle, inspect whether it is vanilla solo-player round-end/idle behavior or a remaining plugin event after `RoundStart`.

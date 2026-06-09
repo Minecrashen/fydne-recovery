@@ -343,9 +343,6 @@ namespace Loli.Modules
                             if ((Time.time - pl.LastSynced) < 1f)
                                 yield break;
 
-#if NR
-                            Log.Custom($"{pl.UserInformation.Nickname}: {Time.time - pl.LastSynced}", "FIX NW #" + (i + 1), ConsoleColor.Blue);
-#endif
                         }
 
                         FastReconnect.Process(pl);
@@ -354,8 +351,7 @@ namespace Loli.Modules
                 }
             }
 
-            if (!string.IsNullOrEmpty(pings))
-                Log.Debug(pings);
+            _ = pings;
         }
 
 

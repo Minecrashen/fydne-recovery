@@ -19,17 +19,39 @@ namespace Loli.Scps
             if (ev.Player == null)
                 return;
 
-            if (ev.Player.MovementState.Scale.x != 1 || ev.Player.MovementState.Scale.y != 1 || ev.Player.MovementState.Scale.z != 1)
-                ev.Player.MovementState.Scale = Vector3.one;
+            try
+            {
+                if (ev.Player.MovementState.Scale.x != 1 || ev.Player.MovementState.Scale.y != 1 || ev.Player.MovementState.Scale.z != 1)
+                    ev.Player.MovementState.Scale = Vector3.one;
+            }
+            catch
+            {
+            }
 
-            ev.Player.Tag = (ev.Player.Tag ?? string.Empty).Replace("BigZombie", "").Replace("SpeedZombie", "");
+            string tag;
+            try
+            {
+                tag = (ev.Player.Tag ?? string.Empty).Replace("BigZombie", "").Replace("SpeedZombie", "");
+                ev.Player.Tag = tag;
+            }
+            catch
+            {
+                tag = string.Empty;
+            }
 
-            if (ev.Player.Tag.Contains("Scp008Invisible"))
+            if (tag.Contains("Scp008Invisible"))
                 return;
             if (ev.Role is not RoleTypeId.Scp0492)
                 return;
 
-            Timing.CallDelayed(0.5f, () => SpawnZombieRandom(ev.Player));
+            var player = ev.Player;
+            Timing.CallDelayed(0.5f, () =>
+            {
+                if (player == null || player.Disconnected)
+                    return;
+
+                SpawnZombieRandom(player);
+            });
         }
 
         [EventMethod(PlayerEvents.Attack)]
@@ -39,10 +61,17 @@ namespace Loli.Scps
                 return;
             if (ev.Attacker == null)
                 return;
-            if (ev.Attacker.RoleInformation.Role is not RoleTypeId.Scp0492)
+            try
+            {
+                if (ev.Attacker.RoleInformation.Role is not RoleTypeId.Scp0492)
+                    return;
+            }
+            catch
+            {
                 return;
+            }
 
-            if (ev.Attacker.Tag.Contains("BigZombie"))
+            if ((ev.Attacker.Tag ?? string.Empty).Contains("BigZombie"))
                 ev.Damage *= 1.5f;
         }
 
@@ -55,46 +84,78 @@ namespace Loli.Scps
         }
         internal static void SpawnZombie(Player pl, string type)
         {
-            pl.Tag = pl.Tag.Replace("BigZombie", "").Replace("SpeedZombie", "");
+            if (pl == null || pl.Disconnected)
+                return;
 
-            if (pl.RoleInformation.Role is not RoleTypeId.Scp0492)
+            try
             {
-                pl.Tag += "Scp008Invisible";
-                pl.RoleInformation.SetNew(RoleTypeId.Scp0492, RoleChangeReason.Respawn);
-                Timing.CallDelayed(0.5f, () => pl.Tag = pl.Tag.Replace("Scp008Invisible", ""));
-            }
+                pl.Tag = (pl.Tag ?? string.Empty).Replace("BigZombie", "").Replace("SpeedZombie", "");
 
-            pl.Effects.DisableAll();
+                if (pl.RoleInformation.Role is not RoleTypeId.Scp0492)
+                {
+                    pl.Tag += "Scp008Invisible";
+                    pl.RoleInformation.SetNew(RoleTypeId.Scp0492, RoleChangeReason.Respawn);
+                    Timing.CallDelayed(0.5f, () =>
+                    {
+                        if (pl != null && !pl.Disconnected)
+                            pl.Tag = (pl.Tag ?? string.Empty).Replace("Scp008Invisible", "");
+                    });
+                }
+
+                pl.Effects.DisableAll();
+            }
+            catch
+            {
+                return;
+            }
 
             if (type == "BigZombie")
             {
-                pl.HealthInformation.Hp = 1000;
-                pl.HealthInformation.MaxHp = 1000;
-                pl.MovementState.Scale = new Vector3(1.2f, 0.9f, 1.2f);
-                pl.Tag = "BigZombie";
-                Timing.CallDelayed(0.5f, () =>
+                try
                 {
                     pl.HealthInformation.Hp = 1000;
                     pl.HealthInformation.MaxHp = 1000;
-                });
+                    pl.MovementState.Scale = new Vector3(1.2f, 0.9f, 1.2f);
+                    pl.Tag = "BigZombie";
+                    Timing.CallDelayed(0.5f, () =>
+                    {
+                        if (pl == null || pl.Disconnected)
+                            return;
+
+                        pl.HealthInformation.Hp = 1000;
+                        pl.HealthInformation.MaxHp = 1000;
+                    });
+                }
+                catch
+                {
+                }
             }
             else if (type == "SpeedZombie")
             {
-                float scale = Random.Range(85, 90);
-                pl.HealthInformation.Hp = 350;
-                pl.HealthInformation.MaxHp = 350;
-                pl.MovementState.Scale = new Vector3(scale / 100, scale / 100, scale / 100);
-                pl.Tag = "SpeedZombie";
-                if (pl.Effects.TryGet(EffectType.MovementBoost, out StatusEffectBase playerEffect))
+                try
                 {
-                    playerEffect.Intensity = 30;
-                    pl.Effects.Enable(playerEffect);
-                }
-                Timing.CallDelayed(0.5f, () =>
-                {
+                    float scale = Random.Range(85, 90);
                     pl.HealthInformation.Hp = 350;
                     pl.HealthInformation.MaxHp = 350;
-                });
+                    pl.MovementState.Scale = new Vector3(scale / 100, scale / 100, scale / 100);
+                    pl.Tag = "SpeedZombie";
+                    if (pl.Effects.TryGet(EffectType.MovementBoost, out StatusEffectBase playerEffect))
+                    {
+                        playerEffect.Intensity = 30;
+                        pl.Effects.Enable(playerEffect);
+                    }
+                    Timing.CallDelayed(0.5f, () =>
+                    {
+                        if (pl == null || pl.Disconnected)
+                            return;
+
+                        pl.HealthInformation.Hp = 350;
+                        pl.HealthInformation.MaxHp = 350;
+                    });
+                }
+                catch
+                {
+                }
             }
         }
     }
