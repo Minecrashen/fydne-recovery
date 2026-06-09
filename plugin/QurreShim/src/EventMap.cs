@@ -385,6 +385,9 @@ namespace Qurre.API
                 return;
             }
 
+            if (args.CommandType == LabApi.Features.Enums.CommandType.Console && args.Sender == null)
+                return;
+
             if (args.CommandType == LabApi.Features.Enums.CommandType.Client || args.CommandType == LabApi.Features.Enums.CommandType.Console)
             {
                 var ev = Core.Dispatch(new GameConsoleCommandEvent { Player = Q(args.Sender), Allowed = args.IsAllowed, Sender = args.Sender, Name = args.CommandName, Args = argv });
