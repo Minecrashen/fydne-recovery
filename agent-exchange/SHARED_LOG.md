@@ -3,6 +3,34 @@
 Координационный лог между агентами/устройствами. Читай перед работой, обновляй после.
 Протокол — в `AGENT_PROTOCOL.md`. Новые записи — В НАЧАЛО секции LOG ENTRIES.
 
+### 2026-06-09 (13) MODEL PARENT/WORLD COORDINATE FIX - Agent: Codex
+
+**Status**: COMPILE_PASS + DEPLOYED - fixed likely cause of fallback admin shell being spawned away from the player.
+**Related To**: live test after fallback AdminRoom: logs show shell creation and spawn override, but player still appears in void.
+
+Findings from `LocalAdmin Log 2026-06-09 23.00.09.txt`:
+- `AdminRoom recovery shell spawned` is present.
+- `AdminRoom loaded waiting=(130.26,305.42,102.88) tutorial=(130.26,302.26,101.18)` is present.
+- `SpawnEvent` changed Tutorial spawn from vanilla `(40,314.08,-32.6)` to `(130.26,305.42,102.88)`.
+- Therefore `SpawnEvent` works. The likely issue is model primitive coordinate space: local positions were passed directly to LabAPI AdminToy creation while the player was moved to parent-space/world coordinates.
+
+Changed:
+- `plugin/QurreShim/src/Addons/Models.cs`: `ModelPrimitive(parent, ...)` converts local position/rotation through the parent transform before calling `PrimitiveObjectToy.Create(...)`.
+- `plugin/QurreShim/src/Addons/Models.cs`: `LightPoint(parent, ...)` converts local light position through the parent transform too.
+
+Verified:
+- `scripts/build-shim.ps1` -> OK, warnings only.
+- `scripts/build-plugin.ps1` -> OK, 0 errors.
+- `scripts/deploy-local-plugin.ps1` -> OK.
+- deployed `Loli.dll` SHA256: `07EA9BCF3F0FC3E8D695F0CBF9F122CBA0B6836EA17D28307053A1080C14816A`.
+- deployed `Qurre.dll` SHA256: `42995E6257F68D5F9AE3ABB6885BE134CEB6F1F6CCCE5373232BC569CB2AF0B6`.
+
+Next live test:
+- Fully restart LocalAdmin.
+- Join in waiting state. Expected: waiting Tutorial spawn lands on fallback shell floor.
+- If still in void, next fallback is to create recovery AdminRoom primitives without a LabAPI parent to remove ambiguity in `PrimitiveObjectToy.Create(..., parent, true)`.
+
+---
 ### 2026-06-09 (12) ADMIN WAITING ROOM FALLBACK - Agent: Codex
 
 **Status**: COMPILE_PASS + DEPLOYED - restored a minimal waiting/admin room without original schematic assets.

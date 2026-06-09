@@ -9,6 +9,29 @@
 
 ---
 
+## 2026-06-09 Codex pass: model parent/world coordinate fix
+
+- [x] Inspected fresh live test log `LocalAdmin Log 2026-06-09 23.00.09.txt`.
+  - `AdminRoom recovery shell spawned` is present.
+  - `AdminRoom loaded waiting=(130.26,305.42,102.88) tutorial=(130.26,302.26,101.18)` is present.
+  - `SpawnEvent` confirms Tutorial spawn is changed from vanilla `(40,314.08,-32.6)` to waiting `(130.26,305.42,102.88)`.
+  - Therefore the broken waiting room is not caused by missing `SpawnEvent`; it is caused by model primitives being spawned away from the parent-space spawnpoint.
+- [x] Fixed `plugin/QurreShim/src/Addons/Models.cs`.
+  - `ModelPrimitive(parent, ...)` now converts local position/rotation through `parent.GameObject.transform.TransformPoint(...)` before calling LabAPI `PrimitiveObjectToy.Create(...)`.
+  - `LightPoint(parent, ...)` now converts local light position through the parent transform too.
+  - This should place fallback AdminRoom floor/walls/lights around `(130,305,102)` instead of near local/world zero.
+- [x] Rebuilt and deployed local plugin binaries:
+  - `scripts/build-shim.ps1` -> OK, warnings only.
+  - `scripts/build-plugin.ps1` -> OK, 0 errors.
+  - `scripts/deploy-local-plugin.ps1` -> OK.
+  - deployed `Loli.dll` SHA256: `07EA9BCF3F0FC3E8D695F0CBF9F122CBA0B6836EA17D28307053A1080C14816A`.
+  - deployed `Qurre.dll` SHA256: `42995E6257F68D5F9AE3ABB6885BE134CEB6F1F6CCCE5373232BC569CB2AF0B6`.
+
+Next test:
+- [ ] Fully restart LocalAdmin.
+- [ ] Join during waiting state. Expected: Tutorial waiting spawn lands on fallback shell floor, not in empty air.
+- [ ] If still in void, inspect whether LabAPI `PrimitiveObjectToy.Create(..., parent, true)` interprets position as local despite wrapper docs/behavior; next fallback is to create recovery AdminRoom primitives without parent.
+
 ## 2026-06-09 Codex pass: admin waiting room fallback
 
 - [x] Inspected the live test log from `LocalAdmin Log 2026-06-09 22.46.52.txt`.

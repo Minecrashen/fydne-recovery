@@ -83,7 +83,9 @@ namespace Qurre.API.Addons.Models
         {
             Type = type;
             var parentTr = parent != null ? parent.GameObject.transform : null;
-            Toy = Toys.PrimitiveObjectToy.Create(position, Quaternion.Euler(rotation), scale, parentTr, true);
+            Vector3 worldPosition = parentTr != null ? parentTr.TransformPoint(position) : position;
+            Quaternion worldRotation = parentTr != null ? parentTr.rotation * Quaternion.Euler(rotation) : Quaternion.Euler(rotation);
+            Toy = Toys.PrimitiveObjectToy.Create(worldPosition, worldRotation, scale, parentTr, true);
             Toy.Type = type;
             Toy.Color = color;
             Toy.Flags = collidable ? PrimitiveFlags.Collidable | PrimitiveFlags.Visible : PrimitiveFlags.Visible;
@@ -153,7 +155,8 @@ namespace Qurre.API.Addons.Models
         public LightPoint(Model parent, Color color, Vector3 position, float intensity, float range, float shadowStrength = 0f)
         {
             var parentTr = parent != null ? parent.GameObject.transform : null;
-            Toy = Toys.LightSourceToy.Create(position, Quaternion.identity, Vector3.one, parentTr, true);
+            Vector3 worldPosition = parentTr != null ? parentTr.TransformPoint(position) : position;
+            Toy = Toys.LightSourceToy.Create(worldPosition, Quaternion.identity, Vector3.one, parentTr, true);
             Toy.Color = color;
             Toy.Intensity = intensity;
             Toy.Range = range;
