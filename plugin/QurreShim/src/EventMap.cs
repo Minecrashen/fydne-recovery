@@ -334,10 +334,46 @@ namespace Qurre.API
 
         static void OnWaitingForPlayers() { Qurre.API.ShimState.ClearRoundState(); Core.Dispatch(new RoundWaitingEvent()); }
         static void OnRoundStarted() { Qurre.API.ShimState.ClearRoundState(); Core.Dispatch(new RoundStartEvent()); }
-        static void OnRoundEnded(SArgs.RoundEndedEventArgs args) => Core.Dispatch(new RoundEndEvent { Winner = args.LeadingTeam });
+        static bool RecoveryMode
+        {
+            get
+            {
+                string value = Environment.GetEnvironmentVariable("FYDNE_RECOVERY_MODE") ?? "1";
+                return value != "0" && !value.Equals("false", StringComparison.OrdinalIgnoreCase) && !value.Equals("no", StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
+        static int HumanPlayerCount()
+        {
+            try { return LabPlayer.List.Count(x => !x.IsHost); }
+            catch { return 0; }
+        }
+
+        static void OnRoundEnded(SArgs.RoundEndedEventArgs args)
+        {
+            if (RecoveryMode)
+                Log.Warn($"RecoveryMode: round ended event fired; winner={args.LeadingTeam}; humans={HumanPlayerCount()}");
+
+            Core.Dispatch(new RoundEndEvent { Winner = args.LeadingTeam });
+        }
         static void OnRoundRestarted() => Core.Dispatch(new RoundRestartEvent());
         static void OnRoundStarting(SArgs.RoundStartingEventArgs args) { var ev = Core.Dispatch(new RoundForceStartEvent { Allowed = args.IsAllowed }); PushAllowed(args, ev); }
-        static void OnRoundCheck(SArgs.RoundEndingConditionsCheckEventArgs args) { var ev = Core.Dispatch(new RoundCheckEvent { End = args.CanEnd }); args.CanEnd = ev.End; }
+        static void OnRoundCheck(SArgs.RoundEndingConditionsCheckEventArgs args)
+        {
+            int humans = HumanPlayerCount();
+            var ev = Core.Dispatch(new RoundCheckEvent { End = args.CanEnd });
+            bool canEnd = ev.End;
+
+            if (RecoveryMode && humans <= 1)
+            {
+                if (args.CanEnd || canEnd)
+                    Log.Warn($"RecoveryMode: blocked round end check; original={args.CanEnd}; plugin={canEnd}; humans={humans}");
+
+                canEnd = false;
+            }
+
+            args.CanEnd = canEnd;
+        }
 
         static void OnCommandExecuting(SArgs.CommandExecutingEventArgs args)
         {
