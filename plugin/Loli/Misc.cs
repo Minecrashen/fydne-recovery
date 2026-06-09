@@ -110,17 +110,27 @@ namespace Loli
         }
         void Update()
         {
-            if (Primitive is null)
+            if (Primitive is null || Primitive.Base is null)
+            {
+                enabled = false;
                 return;
+            }
 
             if (Time.time < _nextCycle)
                 return;
 
             _nextCycle += _interval;
 
-            Primitive.Base.NetworkMovementSmoothing = Primitive.MovementSmoothing;
-            Primitive.Base.NetworkRotation = Primitive.Rotation;
-            Primitive.Base.NetworkPosition = Primitive.Position;
+            try
+            {
+                Primitive.Base.NetworkMovementSmoothing = Primitive.MovementSmoothing;
+                Primitive.Base.NetworkRotation = Quaternion.Euler(Primitive.Rotation);
+                Primitive.Base.NetworkPosition = Primitive.Position;
+            }
+            catch
+            {
+                enabled = false;
+            }
         }
     }
     public class RainbowTagController : MonoBehaviour
