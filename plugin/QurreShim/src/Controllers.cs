@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Interactables.Interobjects.DoorUtils;
+using Qurre.API.Objects;
 using Qurre.Events.Structs;
 using Lab = LabApi.Features.Wrappers;
 
@@ -56,14 +57,16 @@ namespace Qurre.API.Controllers
         string _name = "";
         Vector3 _position;
         Quaternion _rotation = Quaternion.identity;
-        public Door(Lab.Door b) { Base = b; _gameObject = b?.GameObject; _name = b?.ToString() ?? ""; }
+        bool _lock;
+        DoorPermissionsPolicy _permissions = new DoorPermissionsPolicy();
+        public Door(Lab.Door b) { Base = b; _gameObject = b?.GameObject; _name = b?.ToString() ?? ""; _permissions = b?.Base?.RequiredPermissions ?? new DoorPermissionsPolicy(); }
         public Door(Vector3 position, object prefab) : this(position, prefab, Quaternion.identity, null) { }
         public Door(Vector3 position, object prefab, Quaternion rotation) : this(position, prefab, rotation, null) { }
         public Door(Vector3 position, object prefab, Quaternion rotation, object permissions)
         {
             _position = position;
             _rotation = rotation;
-            Permissions = permissions;
+            if (permissions is DoorPermissionsPolicy policy) _permissions = policy;
             _gameObject = new GameObject("Door");
             _gameObject.transform.position = position;
             _gameObject.transform.rotation = rotation;
@@ -74,15 +77,66 @@ namespace Qurre.API.Controllers
         public Vector3 Scale { get; set; } = Vector3.one;
         public GameObject GameObject => Base?.GameObject ?? _gameObject;
         public string Name { get => Base?.ToString() ?? _name; set => _name = value; }
-        public dynamic Type => Base?.GetType().Name;
+        public DoorType Type => ResolveType();
         public bool Open { get => Base?.IsOpened ?? false; set { if (Base != null) Base.IsOpened = value; } }
-        public bool Lock { get; set; }
+        public bool Lock
+        {
+            get => Base?.IsLocked ?? _lock;
+            set
+            {
+                _lock = value;
+                if (Base != null) Base.Lock(DoorLockReason.SpecialDoorFeature, value);
+            }
+        }
         public bool Destroyed { get; set; }
-        public bool IsLift => false;
+        public bool IsLift => Base?.Base is Interactables.Interobjects.ElevatorDoor;
         public GameObject DoorVariant => GameObject;
-        public dynamic Permissions { get; set; }
-        public void Unlock() { }
+        public DoorPermissionsPolicy Permissions
+        {
+            get => Base?.Base?.RequiredPermissions ?? _permissions;
+            set
+            {
+                _permissions = value;
+                if (Base?.Base != null) Base.Base.RequiredPermissions = value;
+            }
+        }
+        public void Unlock() => Lock = false;
         public void Destroy() { Destroyed = true; try { UnityEngine.Object.Destroy(GameObject); } catch { } }
+
+        DoorType ResolveType()
+        {
+            if (Base == null) return DoorType.Unknown;
+            switch (Base.DoorName.ToString())
+            {
+                case "LczArmory": return DoorType.LczArmory;
+                case "LczCafe": return DoorType.LczCafe;
+                case "LczGr18Gate": return DoorType.LczGr18Gate;
+                case "Lcz173Gate": return DoorType.Hcz173Gate;
+                case "Lcz173Connector": return DoorType.Lcz173Connector;
+                case "LczCheckpointA": return DoorType.ElevatorLczChkpA;
+                case "LczCheckpointB": return DoorType.ElevatorLczChkpB;
+                case "Hcz079FirstGate": return DoorType.Hcz079First;
+                case "Hcz079SecondGate": return DoorType.Hcz079Second;
+                case "Hcz096": return DoorType.Hcz096;
+                case "Hcz106Primiary": return DoorType.Hcz106First;
+                case "Hcz106Secondary": return DoorType.Hcz106Second;
+                case "HczCheckpoint": return DoorType.ElevatorHczChkpA;
+                case "EzGateA": return DoorType.ElevatorGateA;
+                case "EzGateB": return DoorType.ElevatorGateB;
+                case "EzCheckpointA": return DoorType.EzCheckpointA;
+                case "EzCheckpointB": return DoorType.EzCheckpointB;
+                case "SurfaceNuke": return DoorType.SurfaceNuke;
+                default:
+                    var name = (Base.NameTag ?? Base.ToString() ?? "").ToUpperInvariant();
+                    if (name.Contains("049")) return DoorType.Hcz049Gate;
+                    if (name.Contains("096")) return DoorType.Hcz096;
+                    if (name.Contains("106") && name.Contains("SECOND")) return DoorType.Hcz106Second;
+                    if (name.Contains("106")) return DoorType.Hcz106First;
+                    if (name.Contains("173")) return DoorType.Hcz173Gate;
+                    if (name.Contains("NUKE")) return DoorType.SurfaceNuke;
+                    return DoorType.Unknown;
+            }
+        }
     }
 
     public class Lift
@@ -111,10 +165,38 @@ namespace Qurre.API.Controllers
 
     public class Tesla
     {
+        string _name = "";
         public Lab.Tesla Base { get; }
+        public bool Enable { get; set; } = true;
+        public bool Allow079Interact { get; set; } = true;
+        public List<PlayerRoles.RoleTypeId> ImmunityRoles { get; } = new List<PlayerRoles.RoleTypeId>();
+        public List<Player> ImmunityPlayers { get; } = new List<Player>();
         Tesla(Lab.Tesla b) { Base = b; }
         public static Tesla Get(Lab.Tesla b) => b == null ? null : new Tesla(b);
-        public void Destroy() { }
+        public GameObject GameObject => Base?.Base?.gameObject;
+        public Vector3 Position => Base?.Position ?? Vector3.zero;
+        public Quaternion Rotation => Base?.Rotation ?? Quaternion.identity;
+        public string Name { get => string.IsNullOrEmpty(_name) ? GameObject?.name ?? "" : _name; set => _name = value; }
+        public bool InProgress { get => Base?.Base?.InProgress ?? false; set { if (Base?.Base != null) Base.Base.InProgress = value; } }
+        public float SizeOfTrigger { get => Base?.Base?.sizeOfTrigger ?? 0f; set { if (Base?.Base != null) Base.Base.sizeOfTrigger = value; } }
+        public Vector3 SizeOfKiller { get => Base?.Base?.sizeOfKiller ?? Vector3.zero; set { if (Base?.Base != null) Base.Base.sizeOfKiller = value; } }
+        public void Trigger(bool instant = false)
+        {
+            if (Base == null) return;
+            if (instant) Base.InstantTrigger();
+            else Base.Trigger();
+        }
+        public void Destroy()
+        {
+            try
+            {
+                if (GameObject != null) Mirror.NetworkServer.Destroy(GameObject);
+            }
+            catch
+            {
+                try { UnityEngine.Object.Destroy(GameObject); } catch { }
+            }
+        }
     }
 
     public class Corpse

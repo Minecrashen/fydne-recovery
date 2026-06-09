@@ -32,7 +32,7 @@ namespace Qurre.API.Objects
 
     public enum DoorType
     {
-        ElevatorGateA, ElevatorGateB, ElevatorHczChkpA, ElevatorHczChkpB,
+        Unknown, ElevatorGateA, ElevatorGateB, ElevatorHczChkpA, ElevatorHczChkpB,
         ElevatorLczChkpA, ElevatorLczChkpB, EzCheckpointA, EzCheckpointB,
         EzCheckpointArmoryA, EzCheckpointArmoryB, Hcz049Gate, Hcz079First,
         Hcz079Second, Hcz096, Hcz106First, Hcz106Second, Hcz173Gate,

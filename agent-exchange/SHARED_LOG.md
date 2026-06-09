@@ -349,3 +349,27 @@ Remaining:
 - Live server smoke-test is still the hard gate.
 - Audio playback is still compile-compatible only; voice output needs a separate pass.
 - Actual FYDNE scheme JSON files are needed to validate schematic fidelity.
+
+---
+
+### 2026-06-09 (11) RUNTIME NULL GUARDS + DOOR/TESLA PARITY - Agent: Codex
+
+Status: OFFLINE_COMPAT_PASS - `Qurre.dll` and `Loli.dll` build with 0 compile errors and were deployed locally to LabAPI global plugins.
+
+Changed:
+- `Player.AuthManager` now returns real `ReferenceHub.authManager` instead of null.
+- `Player.InvokeEscape(...)` now dispatches Qurre `EscapeEvent`.
+- `Administrative.RaLogin()` / `RaLogout()` now manipulate current `ServerRoles` with reflection fallbacks for private runtime members.
+- `Player.Disconnected` now uses LabAPI `IsDestroyed` instead of deprecated `IsOffline`.
+- Expanded `Tesla` wrapper: trigger, destroy, name, range, progress state, immunity lists.
+- Expanded `Door` wrapper: real lock/unlock, permissions policy, lift detection, and Qurre `DoorType` mapping.
+- Added `DoorType.Unknown` fallback.
+- Ran `scripts/deploy-local-plugin.ps1 -Build`; artifacts copied to `%APPDATA%\SCP Secret Laboratory\LabAPI\plugins\global`.
+
+Verified:
+- `scripts/build-shim.ps1` -> OK, warnings only.
+- `scripts/build-plugin.ps1` -> OK, 0 errors.
+
+Next:
+- Start local `LocalAdmin.exe` and fix the first live server-log batch.
+- Audio voice playback remains the largest known stub.

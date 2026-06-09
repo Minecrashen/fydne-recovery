@@ -5,7 +5,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using CentralAuth;
 using Qurre.API;
+using Qurre.Events.Structs;
 using Lab = LabApi.Features.Wrappers;
 
 namespace Qurre.API.Controllers
@@ -52,16 +54,18 @@ namespace Qurre.API.Controllers
         public StatsInformationW StatsInformation => new StatsInformationW(Base);
         public Qurre.API.Classification.Player.Client Client => new Qurre.API.Classification.Player.Client(this);
         public VariablesW Variables => new VariablesW(this);
-        public bool Disconnected => Base.IsOffline;
+        public bool Disconnected => Base.IsDestroyed;
         public bool IsHost => Base.IsHost;
         public int Ping => Base.ReferenceHub.connectionToClient?.rtt is double rtt ? (int)(rtt * 1000) : 0;
         public System.DateTime JoinedTime { get; set; } = System.DateTime.UtcNow;
         public System.DateTime SpawnedTime { get; set; } = System.DateTime.UtcNow;
         public float LastSynced { get; set; }
         public Mirror.NetworkConnectionToClient Connection => ConnectionToClient;
-        public dynamic AuthManager => null;
-        public void InvokeEscape(bool cuffed = false) { }
-        public void InvokeEscape(PlayerRoles.RoleTypeId newRole) { }
+        public PlayerAuthenticationManager AuthManager => ReferenceHub.authManager;
+        public void InvokeEscape(bool cuffed = false)
+            => Core.Dispatch(new EscapeEvent { Player = this, OldRole = RoleInformation.Role, Role = RoleInformation.Role });
+        public void InvokeEscape(PlayerRoles.RoleTypeId newRole)
+            => Core.Dispatch(new EscapeEvent { Player = this, OldRole = RoleInformation.Role, Role = newRole });
         public InventorySystem.Items.ItemBase CreateItemInstance(InventorySystem.Items.ItemIdentifier item, bool addToInventory = false)
         {
             try { return Base?.ReferenceHub?.inventory?.CreateItemInstance(item, false); }

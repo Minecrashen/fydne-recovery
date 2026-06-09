@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using UnityEngine;
 using Lab = LabApi.Features.Wrappers;
 using Qurre.API.Controllers;
@@ -381,8 +382,47 @@ namespace Qurre.API
         public string RoleName { get => p.ReferenceHub.serverRoles.Network_myText ?? string.Empty; set => p.ReferenceHub.serverRoles.Network_myText = value; }
         public string RoleColor { get => p.ReferenceHub.serverRoles.Network_myColor ?? "default"; set => p.ReferenceHub.serverRoles.Network_myColor = value; }
         public ServerRoles ServerRoles => p.ReferenceHub.serverRoles;
-        public void RaLogin() { }
-        public void RaLogout() { }
+        public void RaLogin()
+        {
+            var roles = p.ReferenceHub.serverRoles;
+            roles.RemoteAdmin = true;
+            SetField(roles, "Permissions", GetField<ulong>(roles, "GlobalPerms"));
+            TryInvoke(roles, "RefreshPermissions", true);
+            TryInvoke(roles, "RpcResetFixed");
+            TryInvoke(roles, "OpenRemoteAdmin");
+        }
+
+        public void RaLogout()
+        {
+            var roles = p.ReferenceHub.serverRoles;
+            roles.RemoteAdmin = false;
+            TryInvoke(roles, "RpcResetFixed");
+            TryInvoke(roles, "TargetSetRemoteAdmin", false);
+        }
+
+        static T GetField<T>(object instance, string name)
+        {
+            if (instance == null) return default;
+            var field = instance.GetType().GetField(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            return field != null && field.GetValue(instance) is T value ? value : default;
+        }
+
+        static void SetField(object instance, string name, object value)
+        {
+            if (instance == null) return;
+            var field = instance.GetType().GetField(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            field?.SetValue(instance, value);
+        }
+
+        static void TryInvoke(object instance, string name, params object[] args)
+        {
+            if (instance == null) return;
+            var types = args.Select(x => x?.GetType() ?? typeof(object)).ToArray();
+            var method = instance.GetType().GetMethod(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, types, null)
+                         ?? instance.GetType().GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                             .FirstOrDefault(x => x.Name == name && x.GetParameters().Length == args.Length);
+            try { method?.Invoke(instance, args); } catch { }
+        }
         public void Ban(long duration, string reason = "", string issuer = "")
             => p.Ban(string.IsNullOrWhiteSpace(reason) ? "Banned" : reason, duration);
     }

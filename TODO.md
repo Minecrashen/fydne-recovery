@@ -201,3 +201,21 @@ Still runtime-sensitive:
 - [ ] Verify intercom display override updates on clients.
 - [ ] Verify JSON schematic compatibility with the actual FYDNE `Schemes/*.json` files once they are available.
 - [ ] Audio voice playback remains a stub; compile compatibility exists, real sound output is not restored yet.
+
+---
+
+## 2026-06-09 Codex pass: runtime-null guards and door parity
+
+- [x] Replaced `Player.AuthManager => null` with the real `ReferenceHub.authManager`.
+- [x] Implemented `Player.InvokeEscape(...)` by dispatching Qurre `EscapeEvent`.
+- [x] Implemented `Administrative.RaLogin()` / `RaLogout()` using current `ServerRoles` state with reflection fallbacks for private runtime members.
+- [x] Removed deprecated `Player.IsOffline` usage; `Player.Disconnected` now uses `LabAPI Player.IsDestroyed`.
+- [x] Expanded `Tesla` wrapper: trigger, destroy, name, range, progress state, immunity lists.
+- [x] Expanded `Door` wrapper: real `Lock`, `Unlock`, `Permissions`, `IsLift`, and Qurre `DoorType` mapping for current LabAPI door names.
+- [x] Added `DoorType.Unknown` fallback to avoid misclassifying unknown doors.
+- [x] Deployed current `Qurre.dll` + `Loli.dll` to local LabAPI global plugin folder via `scripts/deploy-local-plugin.ps1 -Build`.
+- [x] Verification: `scripts/build-shim.ps1` OK; `scripts/build-plugin.ps1` OK, `0` errors.
+
+Next hard gate:
+- [ ] Start `C:\Users\Admin\fydne_build\scpsl-server\LocalAdmin.exe` and capture first LabAPI plugin-load log.
+- [ ] Fix first live `TypeLoadException` / `MissingMethodException` / `NullReferenceException` batch from server logs.
