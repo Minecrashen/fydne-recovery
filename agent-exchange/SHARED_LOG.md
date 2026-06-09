@@ -426,3 +426,62 @@ Remaining:
 - `HideRaAuth` transpiler logs old-local-index failure; it returns original IL and does not stop startup.
 - `Loli.Addons.AutoModeration.SaveLogs` Harmony target is skipped; target discovery must be ported or the feature disabled.
 - Need player-join and real round-start gameplay smoke-pass next. Current pass proves startup, not full gameplay.
+
+---
+
+### 2026-06-09 (14) SAVED LOCALADMIN LOGS + NO-BACKEND RUNTIME HARDENING - Agent: Codex
+
+Status: LIVE_START_SMOKE_PASS - current deployed build reaches `Waiting for players` with no startup NRE, no QurreSocket background send exception, and no Mirror `SpawnObject ... has no NetworkIdentity` spam in the latest smoke log.
+
+User-provided live result:
+- Player could join.
+- Spawn/waiting behavior was wrong.
+- Forced round start spawned briefly, then the server crashed.
+
+Logs inspected:
+- `%APPDATA%\SCP Secret Laboratory\LocalAdminLogs\7777\LocalAdmin Log 2026-06-09 12.47.02.txt`
+- Older comparison logs around `11.53.44`, `12.38.34`, and `12.45.10`.
+
+Root causes found from logs:
+- `QurreSocket.NetSocket.Send` threw from a background thread because the old FYDNE socket backend is absent.
+- `RequestPlayerListCommandEvent::Loli.DataBase.Modules.Admins.Prefixs` received a null `Sender`.
+- `SpawnEvent::Loli.Scps.Scp0492Better.Spawn` assumed non-null player/tag/movement state.
+- Damage/attack handlers expected legacy `Target` to be populated; the LabAPI bridge only populated `Player`/`Attacker`.
+- Startup emitted Mirror warnings because legacy fake `Door`/`Lift` GameObjects were passed to `NetworkServer.Spawn` without `NetworkIdentity`.
+
+Changed:
+- `Loli.Core.Socket` is now `SafeSocket`.
+  - Socket backend is disabled by default.
+  - To intentionally use a restored backend, set `FYDNE_SOCKET_ENABLED=1` plus `FYDNE_SOCKET_IP`.
+  - `On`, `Off`, and `Emit` are no-op guarded when disabled.
+- `QurreShim.EventMap` now fills compatibility fields:
+  - `Target=Player` for spawn/change-role/death/damage/attack events.
+  - `Sender` for RA player-list events via guarded reflection over `ReferenceHub.queryProcessor`.
+  - null spawning/spawned players are skipped before legacy handlers run.
+- Added guards:
+  - `Loli.DataBase.Modules.Admins.Prefixs` returns if `Sender` is still null.
+  - `Loli.Scps.Scp0492Better` returns on null player/attacker and handles null tags.
+  - `Loli.Builds.Models.Rooms.Range` tolerates missing/early `EzVent` and null players.
+- Added `Loli.Builds.Models.SafeNetwork`.
+  - Existing real network objects still use Mirror when they have `NetworkIdentity`.
+  - Shim/fake model objects without `NetworkIdentity` are not passed into Mirror spawn/unspawn/destroy.
+- Routed confirmed warning sources through `SafeNetwork`: custom Lift model, Server door item animation, and SurfaceObjects nuke-door replacement.
+
+Verified:
+- `scripts/deploy-local-plugin.ps1 -Build` -> OK, deployed to LabAPI global plugin/dependency folders.
+- Hidden LocalAdmin smoke with port `7777` -> latest checked log:
+  `%APPDATA%\SCP Secret Laboratory\LocalAdminLogs\7777\LocalAdmin Log 2026-06-09 16.53.15.txt`
+- Smoke markers:
+  - `Waiting for players=1`
+  - `TypeLoadException=0`
+  - `MissingMethodException=0`
+  - `NullReferenceException=0`
+  - `QurreSocket.NetSocket.Send=0`
+  - `handler .*: Object reference=0`
+  - `SpawnObject .* has no NetworkIdentity=0`
+
+Remaining:
+- Need user/player retest for actual forced round start; this pass verifies clean startup, not full gameplay.
+- `HideRaAuth` still logs `Index - 0 < 0`; it is skipped/fallback-safe but not ported.
+- `AutoModeration.SaveLogs` target method still does not resolve and is skipped.
+- Missing original `Schemes/*.json` assets mean some old FYDNE builds are degraded or absent until assets are restored or rebuilt natively.

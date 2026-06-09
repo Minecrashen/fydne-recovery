@@ -258,3 +258,37 @@ Remaining live warnings:
 - [ ] `HideRaAuth` transpiler logs `Index - 0 < 0`; old RA IL locals changed in v14.2.7. It currently falls back to original method and does not stop startup.
 - [ ] `Loli.Addons.AutoModeration.SaveLogs` Harmony target is skipped; old `TargetMethod()` no longer resolves cleanly.
 - [ ] Full player-join/round-start gameplay pass is still needed; current result is a server-start smoke-pass, not full gameplay validation.
+
+---
+
+## 2026-06-09 Codex pass: saved LocalAdmin logs + no-backend runtime hardening
+
+- [x] Checked saved LocalAdmin logs instead of requiring terminal copy:
+  `%APPDATA%\SCP Secret Laboratory\LocalAdminLogs\7777\LocalAdmin Log 2026-06-09 12.47.02.txt`.
+- [x] Identified live gameplay-start failures:
+  - `QurreSocket.NetSocket.Send` background thread exception when old socket backend is absent.
+  - `RequestPlayerListCommandEvent::Loli.DataBase.Modules.Admins.Prefixs` null sender.
+  - `SpawnEvent::Loli.Scps.Scp0492Better.Spawn` null/player-tag assumptions.
+  - many `DamageEvent` / `AttackEvent` handlers receiving no legacy `Target`.
+- [x] Added `Core.SafeSocket`; socket is now disabled by default and only enabled with `FYDNE_SOCKET_ENABLED=1|true|yes`.
+- [x] Filled legacy event fields in `QurreShim.EventMap`: `Target` for spawn/role/damage/death events and `Sender` for RA player-list requests.
+- [x] Added local null guards in `Admins.Prefixs`, `Scp0492Better`, and `Range`.
+- [x] Made missing/early `Range` vent room non-fatal.
+- [x] Added `Loli.Builds.Models.SafeNetwork` and routed fake lift/door model spawns away from Mirror when no `NetworkIdentity` exists.
+- [x] Verification: `scripts/deploy-local-plugin.ps1 -Build` OK and deployed.
+- [x] Live startup smoke: `LocalAdmin Log 2026-06-09 16.53.15.txt` reaches `Waiting for players`.
+
+Latest smoke markers:
+- [x] `Waiting for players=1`
+- [x] `TypeLoadException=0`
+- [x] `MissingMethodException=0`
+- [x] `NullReferenceException=0`
+- [x] `QurreSocket.NetSocket.Send=0`
+- [x] `handler ... Object reference=0`
+- [x] `SpawnObject ... has no NetworkIdentity=0`
+
+Next runtime gate:
+- [ ] User/player live round-start retest after this build.
+- [ ] If crash remains, collect the newest `%APPDATA%\SCP Secret Laboratory\LocalAdminLogs\7777\LocalAdmin Log *.txt` and fix the first post-16:53 gameplay exception batch.
+- [ ] Port or disable remaining Harmony problems: `HideRaAuth` and `AutoModeration.SaveLogs`.
+- [ ] Restore real FYDNE schematic JSON assets (`Schemes/*.json`) or replace missing builds with native AdminToy/LabAPI implementations.

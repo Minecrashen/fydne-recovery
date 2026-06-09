@@ -74,6 +74,9 @@ namespace Loli.DataBase.Modules
         [EventMethod(ServerEvents.RequestPlayerListCommand)]
         static void Prefixs(RequestPlayerListCommandEvent ev)
         {
+            if (ev.Sender == null)
+                return;
+
             bool gameplayData = Module.GD(ev.Sender) || CheckPerms(ev.Sender, PlayerPermissions.GameplayData);
             string text = "\n";
             foreach (Player pl in Player.List.Where(x => x != null).OrderBy(x => x.UserInformation.Id))

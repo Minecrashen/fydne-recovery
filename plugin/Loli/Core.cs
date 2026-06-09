@@ -17,7 +17,7 @@ namespace Loli
         #region peremens
 
         static internal string ServerName = "[data deleted]";
-        static internal readonly QurreSocket.Client Socket = new(2467, SocketIP);
+        static internal readonly SafeSocket Socket = new(2467, SocketIP);
         public static int MaxPlayers = GameCore.ConfigFile.ServerConfig.GetInt("max_players", 100);
         static internal string CDNUrl => System.Environment.GetEnvironmentVariable("FYDNE_CDN_URL") ?? string.Empty;
 
@@ -39,6 +39,14 @@ namespace Loli
         static internal string ApiToken => System.Environment.GetEnvironmentVariable("FYDNE_API_TOKEN") ?? string.Empty;
         static internal string SteamToken => System.Environment.GetEnvironmentVariable("FYDNE_STEAM_WEB_API_KEY") ?? string.Empty;
         static internal string SocketIP => System.Environment.GetEnvironmentVariable("FYDNE_SOCKET_IP") ?? "127.0.0.1";
+        static internal bool SocketEnabled
+        {
+            get
+            {
+                string value = System.Environment.GetEnvironmentVariable("FYDNE_SOCKET_ENABLED") ?? string.Empty;
+                return value == "1" || value.Equals("true", System.StringComparison.OrdinalIgnoreCase) || value.Equals("yes", System.StringComparison.OrdinalIgnoreCase);
+            }
+        }
         static internal string APIUrl => System.Environment.GetEnvironmentVariable("FYDNE_API_URL") ?? string.Empty;
 
 #if MRP
@@ -133,6 +141,76 @@ namespace Loli
                 catch (System.Exception ex)
                 {
                     Log.Error($"Harmony patch skipped: {type.FullName}: {ex.GetType().Name}: {ex.Message}");
+                }
+            }
+        }
+
+        internal sealed class SafeSocket
+        {
+            readonly QurreSocket.Client _inner;
+            readonly bool _enabled;
+            int _noopSubscriptionId;
+
+            public SafeSocket(int port, string ip)
+            {
+                _enabled = SocketEnabled;
+                if (!_enabled)
+                    return;
+
+                try
+                {
+                    _inner = new QurreSocket.Client(port, ip);
+                }
+                catch (System.Exception ex)
+                {
+                    Log.Error($"QurreSocket disabled: {ex.GetType().Name}: {ex.Message}");
+                    _enabled = false;
+                }
+            }
+
+            public string On(string eventName, System.Action<object[]> action)
+            {
+                if (!_enabled || _inner == null)
+                    return "disabled:" + ++_noopSubscriptionId;
+
+                try
+                {
+                    return _inner.On(eventName, action);
+                }
+                catch (System.Exception ex)
+                {
+                    Log.Error($"QurreSocket.On skipped ({eventName}): {ex.GetType().Name}: {ex.Message}");
+                    return "disabled:" + ++_noopSubscriptionId;
+                }
+            }
+
+            public void Off(string id)
+            {
+                if (!_enabled || _inner == null || string.IsNullOrEmpty(id) || id.StartsWith("disabled:"))
+                    return;
+
+                try
+                {
+                    _inner.Off(id);
+                }
+                catch (System.Exception ex)
+                {
+                    Log.Error($"QurreSocket.Off skipped ({id}): {ex.GetType().Name}: {ex.Message}");
+                }
+            }
+
+            public void Emit(string eventName, object[] data)
+            {
+                if (!_enabled || _inner == null)
+                    return;
+
+                try
+                {
+                    _inner.Emit(eventName, data);
+                }
+                catch (System.Exception ex)
+                {
+                    Log.Error($"QurreSocket.Emit skipped ({eventName}): {ex.GetType().Name}: {ex.Message}");
                 }
             }
         }

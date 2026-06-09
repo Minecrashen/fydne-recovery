@@ -258,6 +258,7 @@
     <Compile Include="Builds\Models\Lamp.cs" />
     <Compile Include="Builds\Models\Lift.cs" />
     <Compile Include="Builds\Models\Radar.cs" />
+    <Compile Include="Builds\Models\SafeNetwork.cs" />
     <Compile Include="Builds\Models\Rooms\AdminRoom.cs" />
     <Compile Include="Builds\Models\Rooms\Bashni.cs" />
     <Compile Include="Builds\Models\Rooms\Range.cs" />

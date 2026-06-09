@@ -23,6 +23,9 @@ namespace Loli.Builds.Models.Rooms
 
         static internal bool InvisibleInCheck(Player pl)
         {
+            if (pl == null)
+                return false;
+
             Vector3 pos = pl.MovementState.Position;
             // -402 984 155
             // -353 1000 124
@@ -30,7 +33,7 @@ namespace Loli.Builds.Models.Rooms
                 (pos.y > 284 && pos.y < 3000) &&
                 (pos.z > 124 && pos.z < 155))
                 return true;
-            if (pos.y > YVent && pos.y < YVent + 20 && pl.GamePlay.Room == VentRoom)
+            if (VentRoom != null && pos.y > YVent && pos.y < YVent + 20 && pl.GamePlay.Room == VentRoom)
                 return true;
             if (pos.y > 294f && pos.x.Difference(-130) < 10 && pos.z.Difference(-20) < 10)
                 return true;
@@ -45,7 +48,10 @@ namespace Loli.Builds.Models.Rooms
 #endif
         static void SpawnChangePos(SpawnEvent ev)
         {
-            if (DonateSpawnPoint != default && ev.Player.Tag.Contains("DonateSpawnPoint"))
+            if (ev.Player == null)
+                return;
+
+            if (DonateSpawnPoint != default && (ev.Player.Tag ?? string.Empty).Contains("DonateSpawnPoint"))
                 ev.Position = DonateSpawnPoint;
             else if (ChaosSpawnPoint != default && ev.Role is RoleTypeId.ChaosConscript
                 or RoleTypeId.ChaosMarauder or RoleTypeId.ChaosRepressor or RoleTypeId.ChaosRifleman)
@@ -68,6 +74,12 @@ namespace Loli.Builds.Models.Rooms
             Model range = new("Range", new(-375, 285, 140));
 
             var vent = Map.Rooms.FindLast(x => x.Type == RoomType.EzVent);
+            if (vent == null || vent.Transform == null)
+            {
+                YVent = 0;
+                VentRoom = null;
+                return;
+            }
             {
                 Model model = new("LiftModels", vent.Position, vent.Rotation.eulerAngles);
                 model.AddPart(new ModelPrimitive(model, PrimitiveType.Cube, Color.white, new(0, 3.484f, -2.285f), Vector3.zero, new(1.7f, 3.74f, 0.166f)));
@@ -202,6 +214,9 @@ namespace Loli.Builds.Models.Rooms
             if (ev.Role != RoleTypeId.FacilityGuard)
                 return;
 
+            if (VentRoom == null)
+                return;
+
             if (Vector3.Distance(VentRoom.Position, ev.Position) > 10)
                 return;
 
@@ -211,6 +226,9 @@ namespace Loli.Builds.Models.Rooms
 
         static internal Vector3 CheckPosition(Vector3 pos)
         {
+            if (VentRoom == null)
+                return pos == Vector3.zero && DonateSpawnPoint != default ? DonateSpawnPoint : pos;
+
             if (Vector3.Distance(VentRoom.Position, pos) < 11)
                 return DonateSpawnPoint;
 

@@ -39,15 +39,15 @@ namespace Loli.Builds.Models.Rooms
 
             Door newdoor = new(door.Position, DoorPrefabs.DoorEZ, door.Rotation, door.Permissions);
 
-            NetworkServer.UnSpawn(newdoor.GameObject);
+            Loli.Builds.Models.SafeNetwork.UnSpawn(newdoor.GameObject);
 
             newdoor.Name = door.Name;
 
             if (newdoor.DoorVariant.TryGetComponent<DoorNametagExtension>(out var nametag))
                 nametag.UpdateName(door.Name);
 
-            NetworkServer.Destroy(door.GameObject);
-            NetworkServer.Spawn(newdoor.GameObject);
+            Loli.Builds.Models.SafeNetwork.Destroy(door.GameObject);
+            Loli.Builds.Models.SafeNetwork.Spawn(newdoor.GameObject);
         }
     }
 }

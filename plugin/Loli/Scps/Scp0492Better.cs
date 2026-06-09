@@ -16,10 +16,13 @@ namespace Loli.Scps
         [EventMethod(PlayerEvents.Spawn)]
         static void Spawn(SpawnEvent ev)
         {
+            if (ev.Player == null)
+                return;
+
             if (ev.Player.MovementState.Scale.x != 1 || ev.Player.MovementState.Scale.y != 1 || ev.Player.MovementState.Scale.z != 1)
                 ev.Player.MovementState.Scale = Vector3.one;
 
-            ev.Player.Tag = ev.Player.Tag.Replace("BigZombie", "").Replace("SpeedZombie", "");
+            ev.Player.Tag = (ev.Player.Tag ?? string.Empty).Replace("BigZombie", "").Replace("SpeedZombie", "");
 
             if (ev.Player.Tag.Contains("Scp008Invisible"))
                 return;
@@ -33,6 +36,8 @@ namespace Loli.Scps
         static void Damage(AttackEvent ev)
         {
             if (!ev.Allowed)
+                return;
+            if (ev.Attacker == null)
                 return;
             if (ev.Attacker.RoleInformation.Role is not RoleTypeId.Scp0492)
                 return;

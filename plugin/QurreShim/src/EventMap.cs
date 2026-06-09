@@ -287,6 +287,21 @@ namespace Qurre.API
             try { return Q(LabPlayer.Get(sender)); }
             catch { return Server.Host; }
         }
+        static CommandSender Sender(LabPlayer player)
+        {
+            try
+            {
+                object processor = player?.ReferenceHub?.queryProcessor;
+                if (processor == null) return null;
+
+                var field = processor.GetType().GetField("_sender", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
+                return field?.GetValue(processor) as CommandSender;
+            }
+            catch
+            {
+                return null;
+            }
+        }
         static void PushAllowed(dynamic args, EventBase ev) { try { args.IsAllowed = ev.Allowed; } catch { } }
         static float ReadDamage(object handler) { try { return (float)((dynamic)handler).Damage; } catch { return 0f; } }
         static T Prop<T>(object source, string name, T fallback = default)
@@ -375,14 +390,28 @@ namespace Qurre.API
 
         static void OnJoined(PArgs.PlayerJoinedEventArgs args) => Core.Dispatch(new JoinEvent { Player = Q(args.Player) });
         static void OnLeft(PArgs.PlayerLeftEventArgs args) => Core.Dispatch(new LeaveEvent { Player = Q(args.Player) });
-        static void OnSpawning(PArgs.PlayerSpawningEventArgs args) { var ev = Core.Dispatch(new SpawnEvent { Player = Q(args.Player), Role = args.Role.RoleTypeId, Position = args.SpawnLocation, Allowed = args.IsAllowed }); args.SpawnLocation = ev.Position; args.IsAllowed = ev.Allowed; }
-        static void OnSpawned(PArgs.PlayerSpawnedEventArgs args) => Core.Dispatch(new SpawnEvent { Player = Q(args.Player), Role = args.Role.RoleTypeId, Position = args.SpawnLocation });
-        static void OnChangingRole(PArgs.PlayerChangingRoleEventArgs args) { var ev = Core.Dispatch(new ChangeRoleEvent { Player = Q(args.Player), Role = args.NewRole, OldRole = args.OldRole?.RoleTypeId ?? default, Allowed = args.IsAllowed }); args.NewRole = ev.Role; args.IsAllowed = ev.Allowed; }
-        static void OnChangedRole(PArgs.PlayerChangedRoleEventArgs args) => Core.Dispatch(new ChangeRoleEvent { Player = Q(args.Player), Role = args.NewRole.RoleTypeId, OldRole = args.OldRole });
-        static void OnDying(PArgs.PlayerDyingEventArgs args) { var ev = Core.Dispatch(new DiesEvent { Player = Q(args.Player), Attacker = Q(args.Attacker), DamageInfo = args.DamageHandler, Damage = ReadDamage(args.DamageHandler), Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }
-        static void OnDeath(PArgs.PlayerDeathEventArgs args) => Core.Dispatch(new DeadEvent { Player = Q(args.Player), Attacker = Q(args.Attacker), DamageInfo = args.DamageHandler, Damage = ReadDamage(args.DamageHandler), OldRole = args.OldRole, Position = args.OldPosition });
-        static void OnHurting(PArgs.PlayerHurtingEventArgs args) { var ev = Core.Dispatch(new DamageEvent { Player = Q(args.Player), Attacker = Q(args.Attacker), DamageInfo = args.DamageHandler, Damage = ReadDamage(args.DamageHandler), Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }
-        static void OnHurt(PArgs.PlayerHurtEventArgs args) => Core.Dispatch(new AttackEvent { Player = Q(args.Player), Attacker = Q(args.Attacker), DamageInfo = args.DamageHandler, Damage = ReadDamage(args.DamageHandler) });
+        static void OnSpawning(PArgs.PlayerSpawningEventArgs args)
+        {
+            var player = Q(args.Player);
+            if (player == null) return;
+
+            var ev = Core.Dispatch(new SpawnEvent { Player = player, Target = player, Role = args.Role.RoleTypeId, Position = args.SpawnLocation, Allowed = args.IsAllowed });
+            args.SpawnLocation = ev.Position;
+            args.IsAllowed = ev.Allowed;
+        }
+        static void OnSpawned(PArgs.PlayerSpawnedEventArgs args)
+        {
+            var player = Q(args.Player);
+            if (player == null) return;
+
+            Core.Dispatch(new SpawnEvent { Player = player, Target = player, Role = args.Role.RoleTypeId, Position = args.SpawnLocation });
+        }
+        static void OnChangingRole(PArgs.PlayerChangingRoleEventArgs args) { var player = Q(args.Player); var ev = Core.Dispatch(new ChangeRoleEvent { Player = player, Target = player, Role = args.NewRole, OldRole = args.OldRole?.RoleTypeId ?? default, Allowed = args.IsAllowed }); args.NewRole = ev.Role; args.IsAllowed = ev.Allowed; }
+        static void OnChangedRole(PArgs.PlayerChangedRoleEventArgs args) { var player = Q(args.Player); Core.Dispatch(new ChangeRoleEvent { Player = player, Target = player, Role = args.NewRole.RoleTypeId, OldRole = args.OldRole }); }
+        static void OnDying(PArgs.PlayerDyingEventArgs args) { var player = Q(args.Player); var ev = Core.Dispatch(new DiesEvent { Player = player, Target = player, Attacker = Q(args.Attacker), DamageInfo = args.DamageHandler, Damage = ReadDamage(args.DamageHandler), Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }
+        static void OnDeath(PArgs.PlayerDeathEventArgs args) { var player = Q(args.Player); Core.Dispatch(new DeadEvent { Player = player, Target = player, Attacker = Q(args.Attacker), DamageInfo = args.DamageHandler, Damage = ReadDamage(args.DamageHandler), OldRole = args.OldRole, Position = args.OldPosition }); }
+        static void OnHurting(PArgs.PlayerHurtingEventArgs args) { var player = Q(args.Player); var ev = Core.Dispatch(new DamageEvent { Player = player, Target = player, Attacker = Q(args.Attacker), DamageInfo = args.DamageHandler, Damage = ReadDamage(args.DamageHandler), Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }
+        static void OnHurt(PArgs.PlayerHurtEventArgs args) { var player = Q(args.Player); Core.Dispatch(new AttackEvent { Player = player, Target = player, Attacker = Q(args.Attacker), DamageInfo = args.DamageHandler, Damage = ReadDamage(args.DamageHandler) }); }
         static void OnInteractingDoor(PArgs.PlayerInteractingDoorEventArgs args)
         {
             bool allowed = args.IsAllowed && args.CanOpen;
@@ -435,7 +464,7 @@ namespace Qurre.API
         static void OnBanning(PArgs.PlayerBanningEventArgs args) { var ev = Core.Dispatch(new BanEvent { Player = Q(args.Player), Issuer = Q(args.Issuer), Reason = args.Reason, Duration = args.Duration, Allowed = args.IsAllowed }); args.Reason = ev.Reason; args.Duration = ev.Duration; args.IsAllowed = ev.Allowed; }
         static void OnBanned(PArgs.PlayerBannedEventArgs args) => Core.Dispatch(new BannedEvent { Player = Q(args.Player), Issuer = Q(args.Issuer), Reason = args.Reason, UserId = args.PlayerId });
         static void OnKicking(PArgs.PlayerKickingEventArgs args) { var ev = Core.Dispatch(new KickEvent { Player = Q(args.Player), Issuer = Q(args.Issuer), Reason = args.Reason, Allowed = args.IsAllowed }); args.Reason = ev.Reason; args.IsAllowed = ev.Allowed; }
-        static void OnRequestingRaPlayerList(PArgs.PlayerRequestingRaPlayerListEventArgs args) { var ev = Core.Dispatch(new RequestPlayerListCommandEvent { Player = Q(args.Player), Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }
+        static void OnRequestingRaPlayerList(PArgs.PlayerRequestingRaPlayerListEventArgs args) { var ev = Core.Dispatch(new RequestPlayerListCommandEvent { Player = Q(args.Player), Sender = Sender(args.Player), Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }
         static void OnReportingCheater(PArgs.PlayerReportingCheaterEventArgs args) { var ev = Core.Dispatch(new CheaterReportEvent { Player = Q(args.Player), Target = Q(args.Target), Reason = args.Reason, Allowed = args.IsAllowed }); args.Reason = ev.Reason; args.IsAllowed = ev.Allowed; }
         static void OnReportingPlayer(PArgs.PlayerReportingPlayerEventArgs args) { var ev = Core.Dispatch(new LocalReportEvent { Player = Q(args.Player), Target = Q(args.Target), Reason = args.Reason, Allowed = args.IsAllowed }); args.Reason = ev.Reason; args.IsAllowed = ev.Allowed; }
         static void OnUpdatingEffect(PArgs.PlayerEffectUpdatingEventArgs args)

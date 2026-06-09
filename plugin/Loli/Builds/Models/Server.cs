@@ -25,7 +25,7 @@ namespace Loli.Builds.Models
             IEnumerator<float> OpenDoor()
             {
                 Opening = true;
-                try { NetworkServer.UnSpawn(Item); } catch { }
+                SafeNetwork.UnSpawn(Item);
                 Door.GameObject.transform.localRotation = Quaternion.Euler(new Vector3(0, 360, 0));
                 for (float i = 360; i > 270; i--)
                 {
@@ -34,12 +34,12 @@ namespace Loli.Builds.Models
                 }
                 Opened = true;
                 Opening = false;
-                try { NetworkServer.Spawn(Item); } catch { }
+                SafeNetwork.Spawn(Item);
             }
             IEnumerator<float> CloseDoor()
             {
                 Opening = true;
-                try { NetworkServer.UnSpawn(Item); } catch { }
+                SafeNetwork.UnSpawn(Item);
                 Door.GameObject.transform.localRotation = Quaternion.Euler(new Vector3(0, 270, 0));
                 for (float i = 270; i < 360; i++)
                 {
@@ -48,7 +48,7 @@ namespace Loli.Builds.Models
                 }
                 Opened = false;
                 Opening = false;
-                try { NetworkServer.Spawn(Item); } catch { }
+                SafeNetwork.Spawn(Item);
             }
         }
         internal Server(Vector3 pos, Vector3 rot, Model root = null)

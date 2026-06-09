@@ -47,11 +47,11 @@ namespace Loli.Builds.Models
             LocalCreator Create(LiftCreator cre, bool first)
             {
                 Model Model = new("Lift", cre.Position, cre.Rotation);
-                NetworkServer.UnSpawn(Model.GameObject);
+                SafeNetwork.UnSpawn(Model.GameObject);
                 Model.GameObject.transform.parent = cre.Parent;
                 Model.GameObject.transform.localPosition = cre.Position;
                 Model.GameObject.transform.localRotation = Quaternion.Euler(cre.Rotation);
-                NetworkServer.Spawn(Model.GameObject);
+                SafeNetwork.Spawn(Model.GameObject);
 
                 GameObject zeroDoor = new();
                 zeroDoor.transform.parent = Model.GameObject.transform;
