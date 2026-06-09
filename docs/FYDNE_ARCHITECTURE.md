@@ -4,6 +4,12 @@
 
 Цель документа: дать карту модулей, событий, команд, внешних зависимостей и runtime-рисков, чтобы восстановление шло системно, а не только по одному crash-логу.
 
+Подробные приложения:
+
+- `docs/10_RUNTIME_EXECUTION_MAP.md` - пошаговая runtime-схема от запуска сервера до waiting/join/spawn/round/end.
+- `docs/11_MODULE_CATALOG.md` - каталог подсистем `Loli.dll`: назначение, события, риски восстановления.
+- `docs/12_EVENT_COMMAND_INDEX.md` - индекс event types, команд, socket-контракта, Harmony patches и high-risk mutators.
+
 ## Текущее состояние тестов
 
 Последний локальный тест после отключения auto-restart показал:

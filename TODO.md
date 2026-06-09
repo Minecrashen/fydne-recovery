@@ -33,6 +33,13 @@ Next code targets if the disconnect is fixed but spawn is still wrong:
 - [ ] Harden `AdminRoom` waiting spawn against missing/partial custom geometry.
 - [ ] Audit hardcoded out-of-map rooms: `AdminRoom`, `Range`, `Gate3`, `Bashni`, `RadarLoc`, `VertPlace`, `NuclearAttack`, `Scp008`, `Hackers`.
 
+## 2026-06-09 Codex pass: detailed architecture documents
+
+- [x] Added `docs/10_RUNTIME_EXECUTION_MAP.md`: full runtime flow from LabAPI bootstrap to QurreShim, Loli enable, waiting, join, spawn, round start/end, socket, notifications, and current recovery branches.
+- [x] Added `docs/11_MODULE_CATALOG.md`: module-by-module catalog for `Core`, `Modules`, `Builds`, `Spawns`, `DataBase`, `Addons`, `Concepts`, `Scps`, `Patches`, `HintsCore`, `Logs`, `Webhooks`, and controllers.
+- [x] Added `docs/12_EVENT_COMMAND_INDEX.md`: static index for 398 `[EventMethod]` handlers, command registrations, socket events, Harmony patch groups, and high-risk mutators.
+- [x] Linked the new detailed documents from `docs/FYDNE_ARCHITECTURE.md`.
+
 ## 🔥 P0 — Миграция плагина Qurre→LabAPI (почти готово)
 
 Цель: довести `scripts\build-plugin.ps1 -Census` до **0 ошибок**.

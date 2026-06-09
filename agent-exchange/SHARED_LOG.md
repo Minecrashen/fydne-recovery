@@ -574,3 +574,32 @@ Next:
 - If disconnect persists, inspect the new log first; the previous latest log is stale relative to this patch.
 - If disconnect is fixed but spawn remains bad, next target is the spawn-position chain:
   `Waiting.cs`, `AdminRoom.cs`, `Range.cs`, `Gate3.cs`, `FastReconnect.cs`, `Spawn.cs`, `SpawnManager.cs`, `Fixes.cs`.
+
+---
+
+### 2026-06-09 (17) DETAILED ARCHITECTURE MAP - Agent: Codex
+
+Status: DOCUMENTATION_PASS - added detailed runtime and module architecture documents after user requested a much deeper map than the previous tactical repair notes.
+
+Added:
+- `docs/10_RUNTIME_EXECUTION_MAP.md`
+  - Describes server startup from LocalAdmin/SCP:SL -> LabAPI -> QurreShim -> Loli.
+  - Documents QurreShim event registry, priority order, Loli.Core.Enable, global cycles, waiting phase, join phase, round start, spawn chain, role changes, damage/death, interactions, commands, socket, notifications, end/restart, and current recovery branches.
+- `docs/11_MODULE_CATALOG.md`
+  - Module-by-module catalog for Core, Modules, Builds, Spawns, DataBase, Addons, Concepts, Scps, Patches, HintsCore, Logs, Webhooks, Controllers.
+  - Marks responsibilities, events/commands/socket where relevant, and recovery risk.
+- `docs/12_EVENT_COMMAND_INDEX.md`
+  - Static index for 398 `[EventMethod]` handlers by event type/count.
+  - Includes command registrations, socket contract, Harmony patch groups, high-risk position/role/round/Allowed mutators, and debug order for spawn/disconnect.
+- Linked these documents from `docs/FYDNE_ARCHITECTURE.md`.
+- Updated `TODO.md` with this documentation pass.
+
+Important findings preserved in docs:
+- `RoundEvents.Waiting`: 78 handlers.
+- `PlayerEvents.Spawn`: 43 handlers.
+- `RoundEvents.Start`: 29 handlers.
+- `PlayerEvents.ChangeRole`: 25 handlers.
+- High-risk spawn mutators: `AdminRoom`, `Range`, `Hacker`, `SerpentsHand`, `Fixes.FixZombieSpawn`, `FastReconnect` (recovery-disabled), `Gate3`, `AntiCringeUpdates`.
+
+Next:
+- If the next live test still has wrong spawn/disconnect, add recovery-mode spawn tracing around `EventMap.OnSpawning`, `AdminRoom.SpawnChangePos`, `Range.SpawnChangePos`, `Hacker.FixPos`, `SerpentsHand.Spawn`, and `Fixes.FixZombieSpawn`.
