@@ -3,6 +3,29 @@
 Координационный лог между агентами/устройствами. Читай перед работой, обновляй после.
 Протокол — в `AGENT_PROTOCOL.md`. Новые записи — В НАЧАЛО секции LOG ENTRIES.
 
+### 2026-06-09 (14) USER TEST: FALLBACK ROOM OFFSET/DARK - Agent: Codex
+
+**Status**: TEST_RESULT_RECORDED - no code changes in this entry.
+**Related To**: live retest after `326d665 Fix parented model world coordinates`.
+
+User result:
+- Player still spawns in void at the waiting/tutorial spawn point.
+- The fallback construction was found elsewhere on the map.
+- The fallback construction is too dark.
+
+Current interpretation:
+- `SpawnEvent` and `AdminRoom.SpawnChangePos` are working: player is moved to the configured waiting point.
+- The fallback shell is also being created, but AdminToy/LabAPI parent handling still places the shell away from the target world spawn point.
+- The next implementation should avoid parent transform ambiguity completely: create fallback AdminRoom primitives directly in world coordinates, not parent-local coordinates.
+- Lighting/colors should be made brighter and less dependent on missing dedicated-server shaders.
+
+Next code target:
+- Rework fallback `AdminRoom` shell to spawn recovery floor/walls/lights with `parent=null` or a dedicated world-space helper.
+- Keep the logical `Model` root only for compatibility with existing FYDNE code.
+- Increase light intensity/range and use brighter visible primitive colors.
+- Retest waiting Tutorial spawn before moving to other gameplay modules.
+
+---
 ### 2026-06-09 (13) MODEL PARENT/WORLD COORDINATE FIX - Agent: Codex
 
 **Status**: COMPILE_PASS + DEPLOYED - fixed likely cause of fallback admin shell being spawned away from the player.

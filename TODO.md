@@ -9,6 +9,19 @@
 
 ---
 
+## 2026-06-09 user test result: fallback room exists but is offset/dark
+
+- [x] User retested commit `326d665`.
+- [x] Result: player still spawns in void at the waiting/tutorial spawn point.
+- [x] Important observation: the fallback AdminRoom construction was found elsewhere on the map and is dark.
+- [x] Conclusion: the recovery shell is being created, but LabAPI/AdminToy parent handling still places it away from the target world spawn point. Lighting also needs a stronger fallback.
+
+Next code target:
+- [ ] Rework fallback `AdminRoom` shell to spawn all recovery primitives directly in world coordinates, without LabAPI parent transform ambiguity.
+- [ ] Keep only a lightweight logical `Model` root for code compatibility, but create fallback floor/walls/lights with `parent=null` or a dedicated world-space helper.
+- [ ] Increase fallback room visibility: brighter floor/walls and stronger/wider lights; avoid relying on missing shaders.
+- [ ] After that build/deploy, retest waiting Tutorial spawn before touching other broken gameplay modules.
+
 ## 2026-06-09 Codex pass: model parent/world coordinate fix
 
 - [x] Inspected fresh live test log `LocalAdmin Log 2026-06-09 23.00.09.txt`.
