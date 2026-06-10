@@ -77,6 +77,21 @@ namespace SchematicUnity.API.Objects
             Qurre.API.ShimState.SceneObjects.Remove(this);
             if (GameObject != null) Object.Destroy(GameObject);
         }
+
+        /// <summary>
+        /// Парентит серверный (ненетворковый) GameObject к модели и выставляет локальные координаты.
+        /// Только для логических объектов без NetworkIdentity — тои так парентить нельзя.
+        /// </summary>
+        protected static void AttachLocal(GameObject obj, Qurre.API.Addons.Models.Model parent,
+                                          Vector3 position, Vector3 rotation, Vector3 scale)
+        {
+            if (obj == null) return;
+            if (parent != null && parent.GameObject != null)
+                obj.transform.SetParent(parent.GameObject.transform, false);
+            obj.transform.localPosition = position;
+            obj.transform.localEulerAngles = rotation;
+            obj.transform.localScale = scale;
+        }
     }
 
     /// <summary>Загруженная схематика — дерево объектов.</summary>
@@ -333,7 +348,12 @@ namespace Qurre.API.Classification.Player
         public HintDisplayProxy HintDisplay => new HintDisplayProxy(P);
         public void Reconnect() => P.Reconnect(0f, false);
         public void Disconnect(string reason = "") => P.Disconnect(reason);
-        public void DimScreen() { /* TODO: затемнение экрана */ }
+        public void DimScreen()
+        {
+            // Псевдо-затемнение: чёрный full-block hint на весь центр экрана.
+            // Используется старым кодом (Fixes.FixNotSpawn) перед рестартом.
+            try { P.SendHint("<size=1500%><color=#000000F0>█</color></size>", 2f); } catch { }
+        }
     }
 
     public class HintDisplayProxy

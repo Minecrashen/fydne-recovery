@@ -59,7 +59,7 @@ namespace SchematicUnity.API
                             ReadBool(node, false, "Collidable", "collidable", "Collider", "collider"));
                     }
 
-                    Attach(scheme, obj);
+                    Attach(scheme, obj, localPosition, Quaternion.Euler(localRotation));
                 }
             }
             catch
@@ -92,13 +92,21 @@ namespace SchematicUnity.API
             => Contains(objectKind, "light") ||
                HasAny(node, "LightIntensity", "lightIntensity", "Intensity", "intensity", "Range", "range");
 
-        static void Attach(Scheme scheme, SObject obj)
+        static void Attach(Scheme scheme, SObject obj, Vector3 localPosition, Quaternion localRotation)
         {
             if (obj == null) return;
             obj.Parent = scheme;
             scheme.Childrens.Add(obj);
+            // Тои нельзя парентить к серверному GameObject'у схемы: AdminToyBase синхронизирует
+            // локальные координаты, а родителя на клиентах не существует. Вместо этого тои
+            // следуют за корнем схемы через ToyAnchorSync (как в Models).
             if (obj.GameObject != null && scheme.GameObject != null)
-                obj.GameObject.transform.SetParent(scheme.GameObject.transform, true);
+            {
+                object toyBase = null;
+                try { toyBase = obj.Base; } catch { }
+                ToyAnchorSync.For(scheme.GameObject.transform)
+                    .Register(obj.GameObject, toyBase, localPosition, localRotation);
+            }
         }
 
         static bool TryReadPrimitiveType(JObject node, out PrimitiveType primitiveType)

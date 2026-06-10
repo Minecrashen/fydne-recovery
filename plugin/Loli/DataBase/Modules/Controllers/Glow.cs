@@ -26,8 +26,7 @@ namespace Loli.DataBase.Modules.Controllers
         internal Glow(Player pl, Color32 color)
         {
             var lg = new LightPoint(pl.MovementState.Position, color, 1, 5, shadowStrength: 0);
-            lg.Base.transform.parent = pl.MovementState.Transform;
-            lg.Base.transform.localPosition = Position;
+            lg.Follow(pl.MovementState.Transform, Position);
             lg.ShadowStrength = 0;
             Player = pl;
             Light = lg;
@@ -75,7 +74,7 @@ namespace Loli.DataBase.Modules.Controllers
             if (!TryGet(ev.Player, out var obj))
                 return;
 
-            try { obj.Light.Base.transform.parent = null; } catch { }
+            try { obj.Light.StopFollow(); } catch { }
             try { obj.Light.Position = Vector3.zero; } catch { }
         }
 
@@ -88,8 +87,7 @@ namespace Loli.DataBase.Modules.Controllers
             if (!TryGet(ev.Player, out var obj))
                 return;
 
-            try { obj.Light.Base.transform.parent = ev.Player.Transform; } catch { }
-            try { obj.Light.Base.transform.localPosition = Position; } catch { }
+            try { obj.Light.Follow(ev.Player.MovementState.Transform, Position); } catch { }
         }
 
         [EventMethod(PlayerEvents.Leave)]
@@ -111,7 +109,7 @@ namespace Loli.DataBase.Modules.Controllers
             if (!TryGet(ev.Player, out var obj))
                 return;
 
-            try { obj.Light.Base.transform.parent = null; } catch { }
+            try { obj.Light.StopFollow(); } catch { }
             try { obj.Light.Position = Vector3.zero; } catch { }
         }
 
@@ -124,8 +122,7 @@ namespace Loli.DataBase.Modules.Controllers
             if (!TryGet(ev.Player, out var obj))
                 return;
 
-            try { obj.Light.Base.transform.parent = ev.Player.MovementState.Transform; } catch { }
-            try { obj.Light.Base.transform.localPosition = Position; } catch { }
+            try { obj.Light.Follow(ev.Player.MovementState.Transform, Position); } catch { }
         }
 
         [EventMethod(PlayerEvents.ChangeRole, int.MinValue)]

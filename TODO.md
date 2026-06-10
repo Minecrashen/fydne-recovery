@@ -9,6 +9,26 @@
 
 ---
 
+## 2026-06-10 Claude pass: world-space toy engine (root cause of offset fallback room)
+
+Root cause established by reading LabAPI source (`AdminToy.Create`) and EXILED toy wrappers:
+- `LabApi ...Toy.Create(position, rotation, scale, parent)` treats position/rotation as **local** (`transform.localPosition = position`), so the previous `TransformPoint`-fix produced a double offset (~(260,600,200) — "elsewhere on the map and dark").
+- `AdminToyBase` syncs **local** transform values to clients, while client toy instances are always unparented; server-only parent GameObjects do not exist on clients. Any toy parented to a server-only Model GameObject is therefore misplaced on clients no matter what coordinates are passed.
+
+Fix (engine-level, applies to ALL builds, not just AdminRoom):
+- [x] `plugin/QurreShim/src/Addons/Models.cs`: `ModelPrimitive`/`LightPoint` are now ALWAYS created with `parent=null` at computed world coordinates; logical `Model` hierarchy is kept for code compatibility.
+- [x] Added `ToyAnchorSync` (per-model component): unparented toys follow a moving model root (lift doors, nimb-on-camera, SCP cells) and push `NetworkPosition/NetworkRotation` after each move.
+- [x] Added `ToyWorldFollow` + public `LightPoint.Follow()/StopFollow()`; `Glow.cs` no longer reparents the light toy to the player.
+- [x] `SchematicJsonLoader.Attach` no longer parents loaded toys to the server-only scheme root; uses `ToyAnchorSync` registration instead.
+- [x] `ModelTarget`/`ModelDoor`/`ModelWorkStation`/`ModelPickup` (plain server objects) are now actually parented to the model root — previously their `localPosition` was set without any parent, leaving them near world origin.
+- [x] Fallback `AdminRoom` shell: previous shell root is destroyed on each waiting, surfaces are brighter, 6 lights (4.5/3.5/2.5 intensity, 20–38 range), yellow edge trim on the waiting platform, closed front barrier, world-position log line.
+- [x] `Client.DimScreen()` implemented (black full-block hint) instead of empty stub.
+
+Next test (Windows machine):
+- [ ] `scripts/build-shim.ps1` → `scripts/build-plugin.ps1` → `scripts/deploy-local-plugin.ps1`; fully restart LocalAdmin.
+- [ ] Join during waiting. Expected: Tutorial waiting spawn lands on the bright fallback shell floor at ~(130.26,305.42,102.88); log shows `AdminRoom recovery shell spawned at (130.26, 300.81, 101.30) (world)`.
+- [ ] Force-start round and ride a custom lift if present: doors must animate on the client (ToyAnchorSync path).
+
 ## 2026-06-09 user test result: fallback room exists but is offset/dark
 
 - [x] User retested commit `326d665`.
@@ -17,9 +37,9 @@
 - [x] Conclusion: the recovery shell is being created, but LabAPI/AdminToy parent handling still places it away from the target world spawn point. Lighting also needs a stronger fallback.
 
 Next code target:
-- [ ] Rework fallback `AdminRoom` shell to spawn all recovery primitives directly in world coordinates, without LabAPI parent transform ambiguity.
-- [ ] Keep only a lightweight logical `Model` root for code compatibility, but create fallback floor/walls/lights with `parent=null` or a dedicated world-space helper.
-- [ ] Increase fallback room visibility: brighter floor/walls and stronger/wider lights; avoid relying on missing shaders.
+- [x] Rework fallback `AdminRoom` shell to spawn all recovery primitives directly in world coordinates, without LabAPI parent transform ambiguity. *(done 2026-06-10, engine-level)*
+- [x] Keep only a lightweight logical `Model` root for code compatibility, but create fallback floor/walls/lights with `parent=null` or a dedicated world-space helper. *(done 2026-06-10)*
+- [x] Increase fallback room visibility: brighter floor/walls and stronger/wider lights; avoid relying on missing shaders. *(done 2026-06-10)*
 - [ ] After that build/deploy, retest waiting Tutorial spawn before touching other broken gameplay modules.
 
 ## 2026-06-09 Codex pass: model parent/world coordinate fix
