@@ -788,3 +788,21 @@ Status: CODE_PASS #2 on branch `claude/qurreshim-audit-fixes-7sm9vi`. Испол
 - Кэш обёрток (ConditionalWeakTable) Door/Room/Tesla/Lift/Camera + идентичность; амнезия Stats/InfoToShow под-объектов Player.
 - Фантомные Door/Locker в постройках; реализация playback аудио.
 - Cassie.Lock, Door.Destroy через NetworkServer, Round.StartedTime, RpcShowRoundSummary.
+
+---
+
+### 2026-06-12 (3) QurreShim — wrapper/sub-object caching + stats - Agent: Claude Code
+
+Status: CODE_PASS #3 on branch `claude/qurreshim-audit-fixes-7sm9vi` (всё ещё без стендовой компиляции — нет DLL).
+
+Сделано:
+- **Кэш обёрток (ConditionalWeakTable)** для Room/Door/Tesla/Lift/Camera (по образцу Player) + Equals/GetHashCode по Base. Закрывает «сломанную идентичность» (ev.Door == сохранённой двери, работают словари/Contains) и сохраняет stateful-поля: RoomLights (Override/Color/Enabled), Tesla (Enable/ImmunityRoles/ImmunityPlayers), Door (_lock/_permissions). LabAPI отдаёт стабильные обёртки (Dictionary-кэш), так что ключи стабильны.
+- **Под-объекты Player кэшируются лениво на обёртку** (UserInformation/RoleInformation/Health/Inventory/Movement/GamePlay/Effects/Administrative/Stats/Client/Variables). Закрывает «амнезию»: InfoToShow (RPNames/Spawn/FastReconnect), AhpActiveProcesses, StatsInformation.
+- **KillsCount/DeathsCount наполняются в OnDeath** (раньше всегда 0 → Reports и модерация видели нули). Под-объект Stats теперь персистентный. Примечание: счётчики накапливаются по сессии; на ложные баны не влияют (teamkill-детект Executor использует список Kills).
+- **Round.StartedTime** обновляется в MarkRoundStarted (раньше = время загрузки сборки → длительность раунда мусор).
+- **Cassie.Lock** теперь уважается в Send (подавление CASSIE на сценках CO2/NuclearAttack/Scp008); SendLocked играет всегда.
+- **Door.Destroy** сетевой двери идёт через NetworkServer.Destroy (фантомной — Object.Destroy) → нет рассинхрона с клиентами.
+
+Осознанно НЕ сделано (риск без компиляции / большой объём):
+- StatsInformation.Kills СПИСОК: потребитель Executor делает `x.Target.Role.GetTeam()` — extension-метод по dynamic не резолвится; правка требует смены типа списка (риск компиляции Loli) и это auto-moderation (риск ложных банов). Оставлен пустым = текущее безопасное поведение.
+- Фантомные Door/Locker в постройках (нужен реальный спавн префабов), playback аудио, RpcShowRoundSummary, EffectEnabled-на-каждое-изменение (нужно прошлое значение intensity).

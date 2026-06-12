@@ -538,7 +538,19 @@ namespace Qurre.API
         static void OnChangingRole(PArgs.PlayerChangingRoleEventArgs args) { var player = Q(args.Player); var ev = Core.Dispatch(new ChangeRoleEvent { Player = player, Target = player, Role = args.NewRole, OldRole = args.OldRole?.RoleTypeId ?? default, Allowed = args.IsAllowed }); args.NewRole = ev.Role; args.IsAllowed = ev.Allowed; }
         static void OnChangedRole(PArgs.PlayerChangedRoleEventArgs args) { var player = Q(args.Player); Core.Dispatch(new ChangeRoleEvent { Player = player, Target = player, Role = args.NewRole.RoleTypeId, OldRole = args.OldRole }); }
         static void OnDying(PArgs.PlayerDyingEventArgs args) { var player = Q(args.Player); ClassifyDamage(args.DamageHandler, out var lite, out var full); var ev = Core.Dispatch(new DiesEvent { Player = player, Target = player, Attacker = Q(args.Attacker), DamageInfo = args.DamageHandler, Damage = ReadDamage(args.DamageHandler), LiteType = lite, DamageType = full, Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }
-        static void OnDeath(PArgs.PlayerDeathEventArgs args) { var player = Q(args.Player); ClassifyDamage(args.DamageHandler, out var lite, out var full); Core.Dispatch(new DeadEvent { Player = player, Target = player, Attacker = Q(args.Attacker), DamageInfo = args.DamageHandler, Damage = ReadDamage(args.DamageHandler), LiteType = lite, DamageType = full, OldRole = args.OldRole, Position = args.OldPosition }); }
+        static void OnDeath(PArgs.PlayerDeathEventArgs args)
+        {
+            var player = Q(args.Player);
+            var attacker = Q(args.Attacker);
+            ClassifyDamage(args.DamageHandler, out var lite, out var full);
+
+            // Наполняем счётчики (раньше KillsCount/DeathsCount были амнезийны → проверки модерации
+            // и Reports видели нули). Под-объект StatsInformation теперь кэшируется на обёртке игрока.
+            if (attacker != null && !ReferenceEquals(attacker, player)) attacker.StatsInformation.KillsCount++;
+            if (player != null) player.StatsInformation.DeathsCount++;
+
+            Core.Dispatch(new DeadEvent { Player = player, Target = player, Attacker = attacker, DamageInfo = args.DamageHandler, Damage = ReadDamage(args.DamageHandler), LiteType = lite, DamageType = full, OldRole = args.OldRole, Position = args.OldPosition });
+        }
         // В Qurre И Damage, И Attack — PRE/отменяемые (Attack — патч на AttackerDamageHandler.ProcessDamage,
         // т.е. урон с атакующим), и оба могут менять Damage. Раньше AttackEvent висел на post-хуке Hurt,
         // поэтому Another.EndFF (ev.Allowed/ev.Damage) был no-op. Теперь оба диспатчатся на pre (Hurting),

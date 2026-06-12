@@ -42,18 +42,32 @@ namespace Qurre.API.Controllers
         public UnityEngine.Transform CameraTransform => Base.ReferenceHub.PlayerCameraReference;
         public Mirror.NetworkConnectionToClient ConnectionToClient => Base.ConnectionToClient;
 
-        // Под-объекты Qurre (см. PlayerSubObjects.cs)
-        public UserInformationW UserInformation => new UserInformationW(Base);
-        public RoleInformationW RoleInformation => new RoleInformationW(Base);
-        public HealthInformationW HealthInformation => new HealthInformationW(Base);
-        public InventoryW Inventory => new InventoryW(Base);
-        public MovementStateW MovementState => new MovementStateW(Base);
-        public GamePlayW GamePlay => new GamePlayW(Base);
-        public EffectsW Effects => new EffectsW(Base);
-        public AdministrativeW Administrative => new AdministrativeW(Base);
-        public StatsInformationW StatsInformation => new StatsInformationW(Base);
-        public Qurre.API.Classification.Player.Client Client => new Qurre.API.Classification.Player.Client(this);
-        public VariablesW Variables => new VariablesW(this);
+        // Под-объекты Qurre (см. PlayerSubObjects.cs).
+        // Кэшируются лениво НА ОБЁРТКУ: раньше каждый доступ создавал новый объект, из-за чего
+        // stateful-поля (UserInformation.InfoToShow, HealthInformation.AhpActiveProcesses,
+        // StatsInformation.KillsCount/DeathsCount/Kills) жили лишь до конца выражения («амнезия»).
+        UserInformationW _userInformation;
+        RoleInformationW _roleInformation;
+        HealthInformationW _healthInformation;
+        InventoryW _inventory;
+        MovementStateW _movementState;
+        GamePlayW _gamePlay;
+        EffectsW _effects;
+        AdministrativeW _administrative;
+        StatsInformationW _statsInformation;
+        Qurre.API.Classification.Player.Client _client;
+        VariablesW _variables;
+        public UserInformationW UserInformation => _userInformation ??= new UserInformationW(Base);
+        public RoleInformationW RoleInformation => _roleInformation ??= new RoleInformationW(Base);
+        public HealthInformationW HealthInformation => _healthInformation ??= new HealthInformationW(Base);
+        public InventoryW Inventory => _inventory ??= new InventoryW(Base);
+        public MovementStateW MovementState => _movementState ??= new MovementStateW(Base);
+        public GamePlayW GamePlay => _gamePlay ??= new GamePlayW(Base);
+        public EffectsW Effects => _effects ??= new EffectsW(Base);
+        public AdministrativeW Administrative => _administrative ??= new AdministrativeW(Base);
+        public StatsInformationW StatsInformation => _statsInformation ??= new StatsInformationW(Base);
+        public Qurre.API.Classification.Player.Client Client => _client ??= new Qurre.API.Classification.Player.Client(this);
+        public VariablesW Variables => _variables ??= new VariablesW(this);
         public bool Disconnected => Base.IsDestroyed;
         public bool IsHost => Base.IsHost;
         public int Ping => Base.ReferenceHub.connectionToClient?.rtt is double rtt ? (int)(rtt * 1000) : 0;

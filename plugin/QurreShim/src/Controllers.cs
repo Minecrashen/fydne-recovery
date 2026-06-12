@@ -4,6 +4,7 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Interactables.Interobjects.DoorUtils;
 using Qurre.API.Objects;
 using Qurre.Events.Structs;
@@ -15,9 +16,13 @@ namespace Qurre.API.Controllers
     {
         public Lab.Camera Base { get; }
         Camera(Lab.Camera b) { Base = b; }
-        public static Camera Get(Lab.Camera b) => b == null ? null : new Camera(b);
+        // Кэш: одна Qurre-обёртка на одну LabApi-сущность (идентичность + сохранение состояния).
+        static readonly ConditionalWeakTable<Lab.Camera, Camera> _cache = new ConditionalWeakTable<Lab.Camera, Camera>();
+        public static Camera Get(Lab.Camera b) => b == null ? null : _cache.GetValue(b, x => new Camera(x));
         public static Camera Get(PlayerRoles.PlayableScps.Scp079.Cameras.Scp079Camera b)
             => b == null ? null : Get(Lab.Camera.Get(b));
+        public override bool Equals(object obj) => obj is Camera c && ReferenceEquals(c.Base, Base);
+        public override int GetHashCode() => Base?.GetHashCode() ?? 0;
         public Vector3 Position => Base?.Position ?? Vector3.zero;
         public Quaternion Rotation { get => Base?.Rotation ?? Quaternion.identity; set { if (Base != null) Base.Rotation = value; } }
         public Room Room => Room.Get(Base?.Room);
@@ -28,7 +33,12 @@ namespace Qurre.API.Controllers
     {
         public Lab.Room Base { get; }
         Room(Lab.Room b) { Base = b; Lights = new RoomLights(b); }
-        public static Room Get(Lab.Room b) => b == null ? null : new Room(b);
+        // Кэш обёрток: идентичность (ev.Room == сохранённая комната) + сохранение RoomLights-состояния
+        // (раньше каждый Get создавал новый Room+RoomLights, и room.Lights.Override терялся между вызовами).
+        static readonly ConditionalWeakTable<Lab.Room, Room> _cache = new ConditionalWeakTable<Lab.Room, Room>();
+        public static Room Get(Lab.Room b) => b == null ? null : _cache.GetValue(b, x => new Room(x));
+        public override bool Equals(object obj) => obj is Room r && ReferenceEquals(r.Base, Base);
+        public override int GetHashCode() => Base?.GetHashCode() ?? 0;
         public Vector3 Position { get => Base?.Position ?? Vector3.zero; set { } }
         public Quaternion Rotation => Base?.Rotation ?? Quaternion.identity;
         public Transform Transform => Base?.GameObject?.transform;
@@ -162,7 +172,13 @@ namespace Qurre.API.Controllers
             _gameObject.transform.position = position;
             _gameObject.transform.rotation = rotation;
         }
-        public static Door Get(Lab.Door b) => b == null ? null : new Door(b);
+        // Кэш обёрток по реальной LabApi-двери: идентичность + сохранение _lock/_permissions.
+        // Фантомные двери (конструкторы с позицией, без Base) не кэшируются — у них нет ключа.
+        static readonly ConditionalWeakTable<Lab.Door, Door> _cache = new ConditionalWeakTable<Lab.Door, Door>();
+        public static Door Get(Lab.Door b) => b == null ? null : _cache.GetValue(b, x => new Door(x));
+        public override bool Equals(object obj)
+            => obj is Door d && (Base != null || d.Base != null ? ReferenceEquals(d.Base, Base) : ReferenceEquals(d, this));
+        public override int GetHashCode() => Base != null ? Base.GetHashCode() : RuntimeHelpers.GetHashCode(this);
         public Vector3 Position { get => Base?.Position ?? _position; set { _position = value; if (_gameObject != null) _gameObject.transform.position = value; } }
         public Quaternion Rotation { get => Base?.Rotation ?? _rotation; set { _rotation = value; if (_gameObject != null) _gameObject.transform.rotation = value; } }
         public Vector3 Scale { get; set; } = Vector3.one;
@@ -192,7 +208,18 @@ namespace Qurre.API.Controllers
             }
         }
         public void Unlock() => Lock = false;
-        public void Destroy() { Destroyed = true; try { UnityEngine.Object.Destroy(GameObject); } catch { } }
+        public void Destroy()
+        {
+            Destroyed = true;
+            // Сетевой объект сносим через NetworkServer.Destroy (иначе рассинхрон с клиентами);
+            // фантомный GameObject — обычным Destroy.
+            try
+            {
+                if (Base != null && GameObject != null) { Mirror.NetworkServer.Destroy(GameObject); return; }
+            }
+            catch { }
+            try { UnityEngine.Object.Destroy(GameObject); } catch { }
+        }
 
         DoorType ResolveType()
         {
@@ -234,7 +261,10 @@ namespace Qurre.API.Controllers
     {
         public Lab.Elevator Base { get; }
         Lift(Lab.Elevator b) { Base = b; }
-        public static Lift Get(Lab.Elevator b) => b == null ? null : new Lift(b);
+        static readonly ConditionalWeakTable<Lab.Elevator, Lift> _cache = new ConditionalWeakTable<Lab.Elevator, Lift>();
+        public static Lift Get(Lab.Elevator b) => b == null ? null : _cache.GetValue(b, x => new Lift(x));
+        public override bool Equals(object obj) => obj is Lift l && ReferenceEquals(l.Base, Base);
+        public override int GetHashCode() => Base?.GetHashCode() ?? 0;
         public GameObject GameObject => Base?.Base?.gameObject;
         public Transform Transform => Base?.Base?.transform;
         public Interactables.Interobjects.ElevatorGroup Type => Base?.Group ?? default;
@@ -263,7 +293,12 @@ namespace Qurre.API.Controllers
         public List<PlayerRoles.RoleTypeId> ImmunityRoles { get; } = new List<PlayerRoles.RoleTypeId>();
         public List<Player> ImmunityPlayers { get; } = new List<Player>();
         Tesla(Lab.Tesla b) { Base = b; }
-        public static Tesla Get(Lab.Tesla b) => b == null ? null : new Tesla(b);
+        // Кэш: Tesla держит stateful-поля (Enable/ImmunityRoles/ImmunityPlayers) — без кэша «настроил
+        // теслу — она запомнила» молча терялось (каждый Get давал новый объект).
+        static readonly ConditionalWeakTable<Lab.Tesla, Tesla> _cache = new ConditionalWeakTable<Lab.Tesla, Tesla>();
+        public static Tesla Get(Lab.Tesla b) => b == null ? null : _cache.GetValue(b, x => new Tesla(x));
+        public override bool Equals(object obj) => obj is Tesla t && ReferenceEquals(t.Base, Base);
+        public override int GetHashCode() => Base?.GetHashCode() ?? 0;
         public GameObject GameObject => Base?.Base?.gameObject;
         public Vector3 Position => Base?.Position ?? Vector3.zero;
         public Quaternion Rotation => Base?.Rotation ?? Quaternion.identity;
@@ -453,9 +488,15 @@ namespace Qurre.API.Controllers
 
     public static class Cassie
     {
+        // Lock = подавление CASSIE на время скриптовых сценок (CO2/NuclearAttack/Scp008 ставят true).
+        // Раньше Lock никем не читался — объявления всё равно проигрывались. Теперь Send уважает Lock;
+        // SendLocked играет всегда (намеренно «сквозь» подавление).
         public static bool Lock { get; set; }
         public static void Send(string words, bool makeHold = true, bool makeNoise = true, bool customAnnouncement = true)
-            => Lab.Announcer.Message(words, "", makeHold);
+        {
+            if (Lock) return;
+            Lab.Announcer.Message(words, "", makeHold);
+        }
         public static void SendLocked(string words, bool makeHold = true, bool makeNoise = true)
             => Lab.Announcer.Message(words, "", makeHold);
     }

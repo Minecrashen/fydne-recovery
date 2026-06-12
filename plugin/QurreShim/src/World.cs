@@ -73,7 +73,7 @@ namespace Qurre.API.World
         /// <summary>Инкремент токена раунда. Зовётся из OnRoundStarted (EventMap) на КАЖДОМ старте —
         /// и ванильном (таймер лобби), и плагинном. Раньше счётчик рос только в Round.Start(),
         /// поэтому guard'ы корутин (round != CurrentRound) не срабатывали на ванильных стартах.</summary>
-        internal static void MarkRoundStarted() => _currentRound++;
+        internal static void MarkRoundStarted() { _currentRound++; StartedTime = DateTime.UtcNow; }
         public static bool Started => Lab.Round.IsRoundStarted;
         public static bool Ended => Lab.Round.IsRoundEnded;
         /// <summary>Лобби (раунд ещё не стартовал и не закончился).</summary>
