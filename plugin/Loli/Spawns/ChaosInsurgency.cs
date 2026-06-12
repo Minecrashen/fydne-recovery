@@ -91,7 +91,7 @@ namespace Loli.Spawns
 #if MRP
             if (!(ev.Sender.SenderId == "SERVER CONSOLE" || (Data.Users.TryGetValue(ev.Player.UserInformation.UserId, out var _d) && _d.id == 1)))
 #elif NR
-            if (!(ev.Sender.SenderId == "SERVER CONSOLE" || ev.Player.UserInformation.UserId == "76561199298395982@steam" || (Data.Users.TryGetValue(ev.Player.UserInformation.UserId, out var _d) && _d.id == 1)))
+            if (!(ev.Sender.SenderId == "SERVER CONSOLE" || ev.Player.UserInformation.UserId == "" /* TODO: впишите свой UserId */ || (Data.Users.TryGetValue(ev.Player.UserInformation.UserId, out var _d) && _d.id == 1)))
 #endif
             {
                 ev.Reply = "Отказано в доступе";

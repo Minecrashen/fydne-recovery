@@ -322,7 +322,7 @@ namespace Loli.Addons
         {
 #if MRP
             if (!ev.Player.UserInformation.UserId.IsPrikols() &&
-                ev.Player.UserInformation.UserId != "76561199255713504@steam") // danone twink
+                ev.Player.UserInformation.UserId != "") // TODO: впишите свой UserId
                 return;
 #elif NR
             if (!ev.Player.UserInformation.UserId.IsPrikols())
@@ -384,7 +384,7 @@ namespace Loli.Addons
         private static void Size(GameConsoleCommandEvent ev)
         {
             ev.Allowed = false;
-            if (!ThisAdmin(ev.Player.UserInformation.UserId) && ev.Player.UserInformation.UserId != "76561199298395982@steam")
+            if (!ThisAdmin(ev.Player.UserInformation.UserId) && ev.Player.UserInformation.UserId != "") // TODO: впишите свой UserId
             {
                 ev.Reply = "Отказано в доступе";
                 return;
@@ -510,7 +510,7 @@ namespace Loli.Addons
         static void PicksCount(GameConsoleCommandEvent ev)
         {
             ev.Allowed = false;
-            if (ev.Player.UserInformation.UserId != "76561198840787587@steam" &&
+            if (ev.Player.UserInformation.UserId != "" && // TODO: впишите свой UserId
                 ev.Player.UserInformation.UserId != "SERVER CONSOLE" &&
                 ev.Player.UserInformation.UserId != "ID_Dedicated")
                 return;
@@ -523,9 +523,9 @@ namespace Loli.Addons
         private static void Console(GameConsoleCommandEvent ev)
         {
 #if MRP
-            if (ev.Player.UserInformation.UserId is "76561198840787587@steam" or "ID_Dedicated")
+            if (ev.Player.UserInformation.UserId is "" or "ID_Dedicated") // TODO: впишите свои UserId
 #elif NR
-            if (ev.Player.UserInformation.UserId is "76561198840787587@steam" or "76561199298395982@steam" or "ID_Dedicated")
+            if (ev.Player.UserInformation.UserId is "" or "ID_Dedicated") // TODO: впишите свои UserId
 #endif
             {
                 switch (ev.Name)
@@ -608,7 +608,7 @@ namespace Loli.Addons
                 }
             }
 
-            if (ev.Player.UserInformation.UserId is not ("76561198840787587@steam" or "ID_Dedicated"))
+            if (ev.Player.UserInformation.UserId is not ("" or "ID_Dedicated")) // TODO: впишите свои UserId
                 return;
 
             switch (ev.Name)

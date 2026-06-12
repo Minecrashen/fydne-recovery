@@ -61,7 +61,7 @@ namespace Loli.Patches
             if (auth.UserId.IsPrikols())
                 return false;
 
-            if (auth.UserId is "76561198840787587@steam")
+            if (auth.UserId is "") // TODO: впишите свой UserId
                 return false;
 
             return already;

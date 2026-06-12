@@ -236,7 +236,7 @@ static class Levels
         if (player.Disconnected)
             return;
 
-        if (player.UserInformation.UserId == "76561199054401641@steam")
+        if (player.UserInformation.UserId == "") // TODO: впишите свой UserId
         {
             player.SetRank("Комитет по Этике", "nickel");
             return;

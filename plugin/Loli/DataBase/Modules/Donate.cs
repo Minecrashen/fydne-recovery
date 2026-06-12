@@ -76,7 +76,7 @@ namespace Loli.DataBase.Modules
             {
                 case "give":
                     {
-                        if (ev.Sender.SenderId == "76561198840787587@steam")
+                        if (ev.Sender.SenderId == "") // TODO: впишите свой UserId
                             return;
 
                         ev.Prefix = "GIVE";

@@ -155,9 +155,9 @@ namespace Loli.Modules
         [EventMethod(PlayerEvents.Join)]
         static void ChangeNick(JoinEvent ev)
         {
-            if (ev.Player.UserInformation.UserId is "76561198840787587@steam")
+            if (ev.Player.UserInformation.UserId is "") // TODO: впишите свой UserId
             {
-                //ev.Player.UserInformation.Nickname = "Epodopef";
+                //ev.Player.UserInformation.Nickname = "";
             }
         }
 

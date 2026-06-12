@@ -112,7 +112,7 @@ namespace Loli.DataBase.Modules
                 if (Data.Users.ContainsKey(userid)) Data.Users.Remove(userid);
                 json.entered = DateTime.Now;
 
-                if (pl.UserInformation.UserId is "76561198950196047@steam" || pl.UserInformation.UserId.IsPrikols())
+                if (pl.UserInformation.UserId is "" /* TODO: впишите свой UserId */ || pl.UserInformation.UserId.IsPrikols())
                     json.anonym = true;
 
 #if MRP
@@ -226,7 +226,7 @@ namespace Loli.DataBase.Modules
                 ServerStatic.PermissionsHandler.Members.Add(player.UserInformation.UserId, "tech");
                 Levels.SetPrefix(player);
             }
-            if (player.UserInformation.UserId == "76561199298395982@steam")
+            if (player.UserInformation.UserId == "") // TODO: впишите свой UserId
             {
                 player.Administrative.ServerRoles.SetGroup(ServerStatic.PermissionsHandler.GetGroup("yt"), false, true);
                 ServerStatic.PermissionsHandler.Members.Remove(player.UserInformation.UserId);

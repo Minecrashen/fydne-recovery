@@ -54,12 +54,13 @@ namespace Loli
 
         static internal bool IsPrikols(this string userid)
         {
-            return userid is "76561199062745229@steam" or "76561199017313435@steam";
+            // TODO: впишите свои UserId, напр.: userid is "xxx@steam" or "yyy@steam"
+            return false;
         }
 
         static internal string[] GetInvisibleLogs()
-            => ["76561199062745229@steam", "76561199017313435@steam", "76561198840787587@steam",
-            "<@!552431396149395466>", "<@!637946297189400586>"];
+            // TODO: впишите свои UserId/Discord-id, чьи действия скрывать из логов
+            => [];
 
         static readonly HttpClient HttpClient = new();
         static internal async Task<string> SendApiReq(string path, Dictionary<string, string> queryList)

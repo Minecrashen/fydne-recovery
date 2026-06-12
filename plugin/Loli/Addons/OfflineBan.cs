@@ -16,6 +16,9 @@ namespace Loli.Addons
     {
         static internal Dictionary<string, BansCounts> _bans = new();
 
+        // TODO: впишите сюда свой UserId, чтобы получить доступ к offline-ban (ob/oban).
+        const string OwnerUserId = "";
+
         static OfflineBan()
         {
             CommandsSystem.RegisterRemoteAdmin("ob", OfflineBan.Send);
@@ -30,7 +33,7 @@ namespace Loli.Addons
 
         internal static void SendOld(RemoteAdminCommandEvent ev)
         {
-            if (!(ev.Sender.SenderId == "76561198840787587@steam" || (ev.Sender.Nickname == "Dedicated Server" &&
+            if (!(ev.Sender.SenderId == OwnerUserId || (ev.Sender.Nickname == "Dedicated Server" &&
                                                                       ev.Sender.SenderId == "")
                                                                   || ev.Sender.SenderId == "SERVER CONSOLE"))
             {
@@ -44,7 +47,7 @@ namespace Loli.Addons
         {
             ev.Allowed = false;
             ev.Prefix = "ob";
-            if (!(ev.Sender.SenderId == "76561198840787587@steam" || (ev.Sender.Nickname == "Dedicated Server" && ev.Sender.SenderId == "")
+            if (!(ev.Sender.SenderId == OwnerUserId || (ev.Sender.Nickname == "Dedicated Server" && ev.Sender.SenderId == "")
                 || ev.Sender.SenderId == "SERVER CONSOLE"))
             {
                 ev.Reply = "Вам не разрешено использовать данную команду.";
