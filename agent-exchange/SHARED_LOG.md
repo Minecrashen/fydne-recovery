@@ -732,3 +732,30 @@ Important findings preserved in docs:
 
 Next:
 - If the next live test still has wrong spawn/disconnect, add recovery-mode spawn tracing around `EventMap.OnSpawning`, `AdminRoom.SpawnChangePos`, `Range.SpawnChangePos`, `Hacker.FixPos`, `SerpentsHand.Spawn`, and `Fixes.FixZombieSpawn`.
+
+---
+
+### 2026-06-12 QurreShim audit fixes (semantics/leaks/security) - Agent: Claude Code (session 2026-06-12)
+
+Status: CODE_PASS — addressed high-ROI findings from the QurreShim technical audit. Branch `claude/qurreshim-audit-fixes-7sm9vi`. NOT yet compiled on a stand (no game DLLs in repo) — needs `scripts/build-shim.ps1` against `dependencies/`.
+
+Fixed:
+- **Alpha → real warhead** (`CompatGlobals.cs`): `Alpha.Start/Stop/Detonate` теперь дёргают `AlphaWarheadController` через рефлексию (защита от смены сигнатур + Warn при промахе). Флаги `Active/Detonated` больше НЕ ставятся этими методами.
+- **Alpha pre/post dedup + флаги в post** (`EventMap.cs`): `AlphaStart/Stop` — отменяемые, диспатчатся только на pre (Starting/Stopping); `AlphaDetonate` — только на post (Detonated, после выставления флага). `Active/Detonated` мутируются только в post-хендлерах → конец рассинхрона при отмене.
+- **AudioPlayerBot фантомы** (`Schematic.cs`): `Audio.CreateNewAudioPlayer` больше НЕ создаёт сетевого игрока (воспроизведение не реализовано). Боты-Spectator не копятся, не ломают HumanPlayerCount/RecoveryMode.
+- **LiteType/DamageType** (`EventMap.cs` + `Structs.cs`): добавлен `ClassifyDamage` (по имени DamageHandler); заполняется в Hurting/Hurt/Dying/Death → ожил `Fixes.AntiLiftKills`. Убраны теневые поля LiteType/DamageType из DamageEvent/AttackEvent.
+- **EnragedCount/TotalCount + generator dedup** (`EventMap.cs`): считаются из `Map.Generators.Engaged`; InteractGeneratorEvent — только interaction-фазы; GeneratorStatus/ActivateGenerator — только post(Activated). Ожила озвучка `Generators.Recontain`.
+- **EffectDisabled double-dispatch** (`EventMap.cs`): убран повторный диспатч из `OnUpdatedEffect`.
+- **No-op сеттеры** (`PlayerSubObjects.cs`): `MaxAhp`/`RemoteAdminAccess` — запись через рефлексию + Warn; `Nickname` → `DisplayName`; **`InventoryW.RemoveItem` теперь реально удаляет** (`p.RemoveItem`), а не роняет под ноги (фикс эксплойта конфискации); `AddItem(item, amount)` учитывает amount.
+- **CurrentRound** (`World.cs`/`EventMap.cs`): инкремент перенесён в `OnRoundStarted` (`Round.MarkRoundStarted`) → guard'ы корутин работают и на ванильных стартах.
+- **WorkStation утечка** (`Controllers.cs`/`World.cs`): `ClearRoundState` уничтожает toy'и, отписывает события и полностью чистит набор.
+- **Безопасность/диагностика**: `Q(CommandSender)` → null вместо `Server.Host` (карательная логика не бьёт по хосту); `Core` — полный стек + имя хендлера в логе fail-open; стабильная сортировка приоритетов; кэш рефлексии в Snapshot; лог-однократно промахов рефлексии (SetProp/Sender); RecoveryMode блокирует конец раунда только при 0 людей (на сбой подсчёта — громкий лог, не вмешивается); починена мёртвая ветка Console в `OnCommandExecuting`.
+
+Deferred (нужна сверка с внешними артефактами или крупный рефактор):
+- Источники `CheckReserveSlot`/`CheckWhiteList`/`JailbirdTrigger` (pre-auth событие LabAPI + Harmony) — нужно точное имя против LabApi.dll.
+- Кэш обёрток (ConditionalWeakTable) для Door/Room/Tesla/Lift/Camera + идентичность.
+- `Room.LightsOff`/`RoomLights.Color` → реальный light-controller LabAPI (нужно имя API).
+- InteractDoor: развести `IsAllowed`/`CanOpen` (нужна сверка семантики Qurre).
+- `FYDNE_DISPATCH_POST_ROLE_EVENTS` раздвоение (флаг off по умолчанию).
+
+Next: собрать `Qurre.dll` через `scripts/build-shim.ps1`, прогнать на стенде, проверить логи на новые Warn (промахи рефлексии warhead/MaxAhp подскажут точные имена API).

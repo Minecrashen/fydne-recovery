@@ -137,7 +137,11 @@ namespace Qurre.API
             if (!_byType.TryGetValue(structType, out var list))
                 _byType[structType] = list = new List<Entry>();
             list.Add(e);
-            list.Sort((a, b) => b.Priority.CompareTo(a.Priority)); // больший приоритет — раньше
+            // Стабильная сортировка: больший приоритет — раньше, при равенстве сохраняем
+            // порядок регистрации (List.Sort нестабилен и тасует равные приоритеты).
+            var ordered = list.OrderByDescending(x => x.Priority).ToList();
+            list.Clear();
+            list.AddRange(ordered);
         }
 
         static void InvokeMarked(Type t, Type attrType)
@@ -202,7 +206,7 @@ namespace Qurre.API
                     }
                     catch (Exception ex)
                     {
-                        Log.Error($"Qurre-shim: handler {eventType.Name}: {ex.InnerException?.Message ?? ex.Message}");
+                        Log.Error($"Qurre-shim: handler {eventType.Name}::{e.Name ?? "<unknown>"} {DescribeException(ex)}");
                     }
 
                 if (trace)
@@ -224,8 +228,16 @@ namespace Qurre.API
             }
             catch (Exception ex)
             {
-                Log.Error($"Qurre-shim: handler {typeof(T).Name}::{entry.Name ?? "<unknown>"}: {ex.InnerException?.Message ?? ex.Message}");
+                Log.Error($"Qurre-shim: handler {typeof(T).Name}::{entry.Name ?? "<unknown>"} {DescribeException(ex)}");
             }
+        }
+
+        // Полное описание исключения хендлера: разворачиваем TargetInvocationException и
+        // печатаем тип, сообщение и стек — без этого диагностика recovery-режима слепа.
+        static string DescribeException(Exception ex)
+        {
+            Exception real = (ex as TargetInvocationException)?.InnerException ?? ex.InnerException ?? ex;
+            return $"{real.GetType().Name}: {real.Message}\n{real.StackTrace}";
         }
 
         static string Describe(Delegate method)
@@ -259,24 +271,35 @@ namespace Qurre.API
             return value == "0" || value.Equals("false", StringComparison.OrdinalIgnoreCase) || value.Equals("no", StringComparison.OrdinalIgnoreCase) || value.Equals("off", StringComparison.OrdinalIgnoreCase);
         }
 
+        // Кэш отражённых членов на тип события: трассировка горячих событий (двери и т.п.)
+        // иначе на каждый хендлер делала полный GetFields/GetProperties без кэша.
+        static readonly Dictionary<Type, FieldInfo[]> _traceFieldCache = new Dictionary<Type, FieldInfo[]>();
+        static readonly Dictionary<Type, PropertyInfo[]> _tracePropCache = new Dictionary<Type, PropertyInfo[]>();
+
         static Dictionary<string, string> Snapshot(object ev)
         {
             Dictionary<string, string> values = new Dictionary<string, string>(StringComparer.Ordinal);
             if (ev == null) return values;
 
-            const BindingFlags flags = BindingFlags.Instance | BindingFlags.Public;
             Type type = ev.GetType();
 
-            foreach (FieldInfo field in type.GetFields(flags))
+            if (!_traceFieldCache.TryGetValue(type, out var fields))
             {
-                if (!_traceFields.Contains(field.Name)) continue;
+                const BindingFlags flags = BindingFlags.Instance | BindingFlags.Public;
+                fields = type.GetFields(flags).Where(f => _traceFields.Contains(f.Name)).ToArray();
+                _traceFieldCache[type] = fields;
+                _tracePropCache[type] = type.GetProperties(flags)
+                    .Where(p => _traceFields.Contains(p.Name) && p.GetIndexParameters().Length == 0).ToArray();
+            }
+
+            foreach (FieldInfo field in fields)
+            {
                 try { values[field.Name] = FormatValue(field.GetValue(ev)); }
                 catch (Exception ex) { values[field.Name] = $"<read-failed:{ex.GetType().Name}>"; }
             }
 
-            foreach (PropertyInfo property in type.GetProperties(flags))
+            foreach (PropertyInfo property in _tracePropCache[type])
             {
-                if (!_traceFields.Contains(property.Name) || property.GetIndexParameters().Length != 0) continue;
                 try { values[property.Name] = FormatValue(property.GetValue(ev)); }
                 catch (Exception ex) { values[property.Name] = $"<read-failed:{ex.GetType().Name}>"; }
             }

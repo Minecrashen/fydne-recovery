@@ -260,34 +260,22 @@ namespace Qurre.API
 
     public static class Audio
     {
+        static bool _audioStubWarned;
+
         public static AudioPlayerBot CreateNewAudioPlayer(string name, RoleTypeId role, Vector3 position, Vector3 rotation)
         {
-            try
+            // ВАЖНО: воспроизведение аудио ещё не реализовано (см. TODO в шапке Schematic.cs).
+            // Раньше каждый вызов инстанцировал НАСТОЯЩЕГО сетевого игрока через
+            // NetworkServer.AddPlayerForConnection — и ссылку на бота теряли (Destroy не звался).
+            // Фантомные Spectator-боты копились: инфлировали PlayerCount, попадали в LabPlayer.List
+            // (HumanPlayerCount считал их людьми → ломал RecoveryMode-логику конца раунда) и могли
+            // ловить Joined → форс в ClassD. Пока звука нет — НЕ создаём сетевого бота вовсе.
+            if (!_audioStubWarned)
             {
-                if (NetworkManager.singleton?.playerPrefab == null)
-                    return new AudioPlayerBot { Name = name, ReferenceHub = HostHub() };
-
-                var botObject = UnityEngine.Object.Instantiate(NetworkManager.singleton.playerPrefab);
-                var connection = new ZeroConnectionToClient();
-                var hub = botObject.GetComponent<ReferenceHub>();
-                NetworkServer.AddPlayerForConnection(connection, botObject);
-                hub.nicknameSync.Network_myNickSync = name;
-                hub.nicknameSync.Network_displayName = name;
-                hub.roleManager.ServerSetRole(role, RoleChangeReason.None);
-
-                Timing.CallDelayed(0.2f, () =>
-                {
-                    try { hub.characterClassManager.GodMode = true; } catch { }
-                    try { hub.transform.position = position; } catch { }
-                    try { hub.transform.eulerAngles = rotation; } catch { }
-                });
-
-                return new AudioPlayerBot { Name = name, ReferenceHub = hub };
+                _audioStubWarned = true;
+                Qurre.API.Log.Warn("Qurre-shim: AudioPlayerBot — воспроизведение не реализовано; сетевой бот НЕ создаётся (звук молчит, но фантомные игроки не плодятся).");
             }
-            catch
-            {
-                return new AudioPlayerBot { Name = name, ReferenceHub = HostHub() };
-            }
+            return new AudioPlayerBot { Name = name, ReferenceHub = null };
         }
 
         static ReferenceHub HostHub()

@@ -289,11 +289,22 @@ namespace Qurre.API
         }
 
         static void Map(object enumValue, Type structType) => _enumToStruct[enumValue] = structType;
+        static readonly HashSet<string> _reflectionMisses = new HashSet<string>();
+        static void LogMissOnce(string key, string message)
+        {
+            lock (_reflectionMisses)
+                if (!_reflectionMisses.Add(key)) return;
+            Log.Warn(message);
+        }
+
         static Qurre.API.Controllers.Player Q(LabPlayer player) => Qurre.API.Controllers.Player.Get(player);
         static Qurre.API.Controllers.Player Q(CommandSender sender)
         {
+            // Раньше при неудачном резолве возвращался Server.Host — карательная логика
+            // (AntiBan и т.п.) адресовалась хосту. Теперь возвращаем null, а хендлеры,
+            // читающие ev.Player, обязаны быть null-устойчивы (dispatcher изолирует NRE).
             try { return Q(LabPlayer.Get(sender)); }
-            catch { return Server.Host; }
+            catch { return null; }
         }
         static CommandSender Sender(LabPlayer player)
         {
@@ -303,6 +314,8 @@ namespace Qurre.API
                 if (processor == null) return null;
 
                 var field = processor.GetType().GetField("_sender", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
+                if (field == null)
+                    LogMissOnce("Sender._sender", $"Qurre-shim: поле _sender не найдено на {processor.GetType().Name} — резолв CommandSender отключён (проверьте против LabApi.dll).");
                 return field?.GetValue(processor) as CommandSender;
             }
             catch
@@ -329,9 +342,38 @@ namespace Qurre.API
             try
             {
                 var prop = target.GetType().GetProperty(name);
-                if (prop?.CanWrite == true) prop.SetValue(target, value);
+                if (prop?.CanWrite == true) { prop.SetValue(target, value); return; }
+                // Промах по имени критичен: на нём держится отмена событий (IsAllowed).
+                LogMissOnce($"SetProp:{target.GetType().Name}.{name}",
+                    $"Qurre-shim: свойство {target.GetType().Name}.{name} не найдено/только для чтения — отмена/мутация события не применится (проверьте против LabApi.dll).");
             }
-            catch { }
+            catch (Exception ex)
+            {
+                LogMissOnce($"SetPropEx:{target.GetType().Name}.{name}",
+                    $"Qurre-shim: ошибка записи {target.GetType().Name}.{name}: {ex.GetType().Name}: {ex.Message}");
+            }
+        }
+
+        // Классификация урона по типу DamageHandler → Qurre Lite/DamageTypes.
+        // По имени типа (а не по ссылке на класс) — устойчиво к переименованиям/версиям SCP:SL.
+        static void ClassifyDamage(object handler, out Qurre.API.Objects.LiteDamageTypes lite, out Qurre.API.Objects.DamageTypes full)
+        {
+            lite = Qurre.API.Objects.LiteDamageTypes.Custom;
+            full = Qurre.API.Objects.DamageTypes.Custom;
+            if (handler == null) return;
+            string n = handler.GetType().Name;
+            bool Has(string s) => n.IndexOf(s, StringComparison.OrdinalIgnoreCase) >= 0;
+
+            if (Has("Explos")) { lite = Qurre.API.Objects.LiteDamageTypes.Explosion; full = Qurre.API.Objects.DamageTypes.Explosion; }
+            else if (Has("Scp018")) { lite = Qurre.API.Objects.LiteDamageTypes.Scp018; full = Qurre.API.Objects.DamageTypes.Scp018; }
+            else if (Has("Warhead")) { lite = Qurre.API.Objects.LiteDamageTypes.Warhead; full = Qurre.API.Objects.DamageTypes.Warhead; }
+            else if (Has("Recontain")) { lite = Qurre.API.Objects.LiteDamageTypes.Recontainment; full = Qurre.API.Objects.DamageTypes.Recontainment; }
+            else if (Has("Jailbird")) { lite = Qurre.API.Objects.LiteDamageTypes.Jailbird; full = Qurre.API.Objects.DamageTypes.Jailbird; }
+            else if (Has("Disruptor") || Has("MicroHid")) { lite = Qurre.API.Objects.LiteDamageTypes.Disruptor; full = Qurre.API.Objects.DamageTypes.Disruptor; }
+            else if (Has("Snowball")) { lite = Qurre.API.Objects.LiteDamageTypes.Snowball; full = Qurre.API.Objects.DamageTypes.Snowball; }
+            else if (Has("Firearm") || Has("Bullet")) { lite = Qurre.API.Objects.LiteDamageTypes.Gun; full = Qurre.API.Objects.DamageTypes.Gun; }
+            else if (Has("Scp")) { lite = Qurre.API.Objects.LiteDamageTypes.ScpDamage; full = Qurre.API.Objects.DamageTypes.ScpDamage; }
+            else if (Has("Universal")) { lite = Qurre.API.Objects.LiteDamageTypes.Universal; full = Qurre.API.Objects.DamageTypes.Universal; }
         }
         static Qurre.API.Objects.EffectType EffectTypeFrom(object effect)
         {
@@ -341,7 +383,7 @@ namespace Qurre.API
         }
 
         static void OnWaitingForPlayers() { Qurre.API.ShimState.ClearRoundState(); Core.Dispatch(new RoundWaitingEvent()); }
-        static void OnRoundStarted() { Qurre.API.ShimState.ClearRoundState(); Core.Dispatch(new RoundStartEvent()); }
+        static void OnRoundStarted() { Qurre.API.ShimState.ClearRoundState(); Qurre.API.World.Round.MarkRoundStarted(); Core.Dispatch(new RoundStartEvent()); }
         static bool RecoveryMode
         {
             get
@@ -351,10 +393,16 @@ namespace Qurre.API
             }
         }
 
+        // -1 = «не удалось посчитать». Раньше возвращался 0 → конец раунда блокировался
+        // даже на полном сервере, молча. Теперь на сбой громко логируем и не вмешиваемся.
         static int HumanPlayerCount()
         {
             try { return LabPlayer.List.Count(x => !x.IsHost); }
-            catch { return 0; }
+            catch (Exception ex)
+            {
+                Log.Error($"Qurre-shim: HumanPlayerCount failed ({ex.GetType().Name}: {ex.Message}); RecoveryMode round-end guard disabled this tick.");
+                return -1;
+            }
         }
 
         static void OnRoundEnded(SArgs.RoundEndedEventArgs args)
@@ -372,7 +420,10 @@ namespace Qurre.API
             var ev = Core.Dispatch(new RoundCheckEvent { End = args.CanEnd });
             bool canEnd = ev.End;
 
-            if (RecoveryMode && humans <= 1)
+            // Блокируем конец раунда только при полном отсутствии людей (0). При <=1 раньше
+            // пустой/одиночный сервер не ротировался вечно. humans == -1 (сбой подсчёта) —
+            // не вмешиваемся.
+            if (RecoveryMode && humans == 0)
             {
                 if (args.CanEnd || canEnd)
                     Log.Warn($"RecoveryMode: blocked round end check; original={args.CanEnd}; plugin={canEnd}; humans={humans}");
@@ -393,9 +444,8 @@ namespace Qurre.API
                 return;
             }
 
-            if (args.CommandType == LabApi.Features.Enums.CommandType.Console)
-                return;
-
+            // Раньше здесь стоял `if (Console) return;` прямо перед `if (Client || Console)`,
+            // из-за чего ветка Console была мёртвой и консольные команды не порождали событий.
             if (args.CommandType == LabApi.Features.Enums.CommandType.Client || args.CommandType == LabApi.Features.Enums.CommandType.Console)
             {
                 var ev = Core.Dispatch(new GameConsoleCommandEvent { Player = Q(args.Sender), Allowed = args.IsAllowed, Sender = args.Sender, Name = args.CommandName, Args = argv });
@@ -455,10 +505,10 @@ namespace Qurre.API
         }
         static void OnChangingRole(PArgs.PlayerChangingRoleEventArgs args) { var player = Q(args.Player); var ev = Core.Dispatch(new ChangeRoleEvent { Player = player, Target = player, Role = args.NewRole, OldRole = args.OldRole?.RoleTypeId ?? default, Allowed = args.IsAllowed }); args.NewRole = ev.Role; args.IsAllowed = ev.Allowed; }
         static void OnChangedRole(PArgs.PlayerChangedRoleEventArgs args) { var player = Q(args.Player); Core.Dispatch(new ChangeRoleEvent { Player = player, Target = player, Role = args.NewRole.RoleTypeId, OldRole = args.OldRole }); }
-        static void OnDying(PArgs.PlayerDyingEventArgs args) { var player = Q(args.Player); var ev = Core.Dispatch(new DiesEvent { Player = player, Target = player, Attacker = Q(args.Attacker), DamageInfo = args.DamageHandler, Damage = ReadDamage(args.DamageHandler), Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }
-        static void OnDeath(PArgs.PlayerDeathEventArgs args) { var player = Q(args.Player); Core.Dispatch(new DeadEvent { Player = player, Target = player, Attacker = Q(args.Attacker), DamageInfo = args.DamageHandler, Damage = ReadDamage(args.DamageHandler), OldRole = args.OldRole, Position = args.OldPosition }); }
-        static void OnHurting(PArgs.PlayerHurtingEventArgs args) { var player = Q(args.Player); var ev = Core.Dispatch(new DamageEvent { Player = player, Target = player, Attacker = Q(args.Attacker), DamageInfo = args.DamageHandler, Damage = ReadDamage(args.DamageHandler), Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }
-        static void OnHurt(PArgs.PlayerHurtEventArgs args) { var player = Q(args.Player); Core.Dispatch(new AttackEvent { Player = player, Target = player, Attacker = Q(args.Attacker), DamageInfo = args.DamageHandler, Damage = ReadDamage(args.DamageHandler) }); }
+        static void OnDying(PArgs.PlayerDyingEventArgs args) { var player = Q(args.Player); ClassifyDamage(args.DamageHandler, out var lite, out var full); var ev = Core.Dispatch(new DiesEvent { Player = player, Target = player, Attacker = Q(args.Attacker), DamageInfo = args.DamageHandler, Damage = ReadDamage(args.DamageHandler), LiteType = lite, DamageType = full, Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }
+        static void OnDeath(PArgs.PlayerDeathEventArgs args) { var player = Q(args.Player); ClassifyDamage(args.DamageHandler, out var lite, out var full); Core.Dispatch(new DeadEvent { Player = player, Target = player, Attacker = Q(args.Attacker), DamageInfo = args.DamageHandler, Damage = ReadDamage(args.DamageHandler), LiteType = lite, DamageType = full, OldRole = args.OldRole, Position = args.OldPosition }); }
+        static void OnHurting(PArgs.PlayerHurtingEventArgs args) { var player = Q(args.Player); ClassifyDamage(args.DamageHandler, out var lite, out var full); var ev = Core.Dispatch(new DamageEvent { Player = player, Target = player, Attacker = Q(args.Attacker), DamageInfo = args.DamageHandler, Damage = ReadDamage(args.DamageHandler), LiteType = lite, DamageType = full, Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }
+        static void OnHurt(PArgs.PlayerHurtEventArgs args) { var player = Q(args.Player); ClassifyDamage(args.DamageHandler, out var lite, out var full); Core.Dispatch(new AttackEvent { Player = player, Target = player, Attacker = Q(args.Attacker), DamageInfo = args.DamageHandler, Damage = ReadDamage(args.DamageHandler), LiteType = lite, DamageType = full }); }
         static void OnInteractingDoor(PArgs.PlayerInteractingDoorEventArgs args)
         {
             bool allowed = args.IsAllowed && args.CanOpen;
@@ -531,47 +581,71 @@ namespace Qurre.API
         }
         static void OnUpdatedEffect(PArgs.PlayerEffectUpdatedEventArgs args)
         {
-            if (args.Intensity == 0)
-                Core.Dispatch(new EffectDisabledEvent { Player = Q(args.Player), Type = EffectTypeFrom(args.Effect) });
+            // Намеренно пусто: EffectDisabledEvent уже диспатчится из OnUpdatingEffect (pre)
+            // при Intensity==0. Раньше тут шёл повторный диспатч → хендлеры (Nimb/Glow)
+            // срабатывали дважды на каждое снятие эффекта.
         }
 
+        static void GeneratorCounts(out int enraged, out int total)
+        {
+            try
+            {
+                var generators = LabApi.Features.Wrappers.Map.Generators;
+                enraged = generators.Count(x => x.Engaged);
+                total = generators.Count();
+            }
+            catch { enraged = 0; total = 0; }
+        }
+
+        // Раньше одна активация порождала каскад: Interacting+Activating+Activated → 3× Interact,
+        // 2× GeneratorStatus, и поля EnragedCount/TotalCount никогда не заполнялись (озвучка молчала).
+        // Теперь: InteractGeneratorEvent — только на pre/interaction-фазах; GeneratorStatusEvent и
+        // ActivateGeneratorEvent — только на post-фазе Activated, с реальным подсчётом включённых.
         static void DispatchGenerator(object args, Qurre.API.Objects.GeneratorStatus? status, bool activated)
         {
-            var ev = Core.Dispatch(new InteractGeneratorEvent
-            {
-                Player = Q(Prop<LabPlayer>(args, "Player")),
-                Generator = Prop<object>(args, "Generator"),
-                Status = status,
-                Allowed = Prop(args, "IsAllowed", true)
-            });
-            SetProp(args, "IsAllowed", ev.Allowed);
+            var player = Q(Prop<LabPlayer>(args, "Player"));
+            var generator = Prop<object>(args, "Generator");
 
-            if (status.HasValue)
+            if (!activated)
             {
-                Core.Dispatch(new GeneratorStatusEvent
+                var ev = Core.Dispatch(new InteractGeneratorEvent
                 {
-                    Player = ev.Player,
-                    Generator = ev.Generator,
-                    Status = status
+                    Player = player,
+                    Generator = generator,
+                    Status = status,
+                    Allowed = Prop(args, "IsAllowed", true)
                 });
+                SetProp(args, "IsAllowed", ev.Allowed);
+
+                // Deactivate/Unlock не имеют отдельной post-фазы — статус отдаём здесь один раз.
+                // Activate обрабатываем только в post-ветке ниже, чтобы не задвоить.
+                bool isActivate = status == Qurre.API.Objects.GeneratorStatus.Activate;
+                if (status.HasValue && !isActivate)
+                {
+                    GeneratorCounts(out int enraged, out int total);
+                    Core.Dispatch(new GeneratorStatusEvent { Player = player, Generator = generator, Status = status, EnragedCount = enraged, TotalCount = total });
+                }
+                return;
             }
 
-            if (activated)
-            {
-                Core.Dispatch(new ActivateGeneratorEvent
-                {
-                    Player = ev.Player,
-                    Generator = ev.Generator,
-                    Status = status
-                });
-            }
+            // post: генератор реально включён.
+            GeneratorCounts(out int en, out int tot);
+            Core.Dispatch(new GeneratorStatusEvent { Player = player, Generator = generator, Status = status, EnragedCount = en, TotalCount = tot });
+            Core.Dispatch(new ActivateGeneratorEvent { Player = player, Generator = generator, Status = status, EnragedCount = en, TotalCount = tot });
         }
 
-        static void OnWarheadStarting(WArgs.WarheadStartingEventArgs args) { Alpha.Active = true; var ev = Core.Dispatch(new AlphaStartEvent { Player = Q(args.Player), Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }
-        static void OnWarheadStarted(WArgs.WarheadStartedEventArgs args) { Alpha.Active = true; Core.Dispatch(new AlphaStartEvent { Player = Q(args.Player) }); }
-        static void OnWarheadStopping(WArgs.WarheadStoppingEventArgs args) { var ev = Core.Dispatch(new AlphaStopEvent { Player = Q(args.Player), Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; if (ev.Allowed) Alpha.Active = false; }
-        static void OnWarheadStopped(WArgs.WarheadStoppedEventArgs args) { Alpha.Active = false; Core.Dispatch(new AlphaStopEvent { Player = Q(args.Player) }); }
-        static void OnWarheadDetonating(WArgs.WarheadDetonatingEventArgs args) { var ev = Core.Dispatch(new AlphaDetonateEvent { Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }
+        // Раньше каждое Alpha-событие диспатчилось и на pre, и на post LabAPI → каждый side-effect
+        // выполнялся дважды, а флаг Alpha.Active ставился на pre и не откатывался при отмене
+        // (рассинхрон на весь раунд). Теперь: pre-фаза диспатчит отменяемое Qurre-событие и
+        // прокидывает Allowed; флаги Active/Detonated мутируются ТОЛЬКО на post-фазе (по факту).
+        static void OnWarheadStarting(WArgs.WarheadStartingEventArgs args) { var ev = Core.Dispatch(new AlphaStartEvent { Player = Q(args.Player), Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }
+        static void OnWarheadStarted(WArgs.WarheadStartedEventArgs args) { Alpha.Active = true; }
+        static void OnWarheadStopping(WArgs.WarheadStoppingEventArgs args) { var ev = Core.Dispatch(new AlphaStopEvent { Player = Q(args.Player), Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }
+        static void OnWarheadStopped(WArgs.WarheadStoppedEventArgs args) { Alpha.Active = false; }
+        // AlphaDetonateEvent у подписчиков (Lift/AutoAlpha/OmegaWarhead) — уведомление «детонация
+        // случилась», а не точка отмены. Поэтому диспатчим его только на post (Detonated), уже
+        // после выставления флага Detonated — иначе хендлеры читали бы Alpha.Detonated == false.
+        static void OnWarheadDetonating(WArgs.WarheadDetonatingEventArgs args) { }
         static void OnWarheadDetonated(WArgs.WarheadDetonatedEventArgs args) { Alpha.Detonated = true; Alpha.Active = false; Core.Dispatch(new AlphaDetonateEvent()); }
 
         static void OnScp914ProcessingPlayer(Scp914Args.Scp914ProcessingPlayerEventArgs args) { var ev = Core.Dispatch(new Scp914UpgradePlayerEvent { Player = Q(args.Player), Position = args.NewPosition, Setting = args.KnobSetting, Allowed = args.IsAllowed }); args.NewPosition = ev.Position; args.IsAllowed = ev.Allowed; }

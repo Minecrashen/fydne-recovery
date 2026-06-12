@@ -108,8 +108,10 @@ namespace Qurre.Events.Structs
     public class CheckReserveSlotEvent : EventBase { }
 
     // --- Бой ---
-    public class DamageEvent : EventBase { public LiteDamageTypes LiteType; public DamageTypes DamageType; }
-    public class AttackEvent : EventBase { public LiteDamageTypes LiteType; public DamageTypes DamageType; }
+    // LiteType/DamageType наследуются из EventBase (раньше тут были теневые поля,
+    // которые EventMap не заполнял → защитная логика плагина читала default).
+    public class DamageEvent : EventBase { }
+    public class AttackEvent : EventBase { }
 
     // --- Предметы ---
     public class PickupItemEvent : EventBase { }

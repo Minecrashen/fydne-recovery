@@ -34,7 +34,11 @@ namespace Qurre.API
             Decontamination.InProgress = false;
             _corpseOwners.Clear();
             SceneObjects.RemoveWhere(x => x == null || x.GameObject == null);
-            WorkStations.RemoveWhere(x => x == null);
+            // Раньше чистились только null-записи (а C#-объект null не бывает) → набор,
+            // подписки OnSearching/OnInteracted и сетевые toy'и копились каждый раунд.
+            // Теперь уничтожаем toy + отписываемся и полностью очищаем набор.
+            foreach (var station in WorkStations) station?.DestroyToy();
+            WorkStations.Clear();
         }
     }
 }
@@ -66,6 +70,10 @@ namespace Qurre.API.World
         static int _currentRound;
         /// <summary>Qurre legacy used this as a numeric round token captured by coroutines.</summary>
         public static int CurrentRound => Lab.Round.IsRoundStarted ? _currentRound == 0 ? 1 : _currentRound : 0;
+        /// <summary>Инкремент токена раунда. Зовётся из OnRoundStarted (EventMap) на КАЖДОМ старте —
+        /// и ванильном (таймер лобби), и плагинном. Раньше счётчик рос только в Round.Start(),
+        /// поэтому guard'ы корутин (round != CurrentRound) не срабатывали на ванильных стартах.</summary>
+        internal static void MarkRoundStarted() => _currentRound++;
         public static bool Started => Lab.Round.IsRoundStarted;
         public static bool Ended => Lab.Round.IsRoundEnded;
         /// <summary>Лобби (раунд ещё не стартовал и не закончился).</summary>
@@ -77,7 +85,9 @@ namespace Qurre.API.World
         public static int ActiveGenerators => Lab.Map.Generators.Count(x => x.Engaged);
 
         public static void End() => Lab.Round.End(true);
-        public static void Start() { _currentRound++; Lab.Round.Start(); }
+        // Инкремент токена делает OnRoundStarted (через MarkRoundStarted), а не этот метод —
+        // иначе плагинный старт считался бы дважды (Start() + событие RoundStarted).
+        public static void Start() => Lab.Round.Start();
         public static void Restart() => Lab.Round.Restart(false, true, global::ServerStatic.NextRoundAction.Restart);
         public static float WaitTime { get; set; }
         public static DateTime StartedTime { get; set; } = DateTime.UtcNow;

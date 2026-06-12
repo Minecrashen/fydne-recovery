@@ -14,7 +14,9 @@ namespace Qurre.API
         global::PlayerInfoArea _infoToShow = global::PlayerInfoArea.Nickname | global::PlayerInfoArea.Badge | global::PlayerInfoArea.CustomInfo;
         public UserInformationW(Lab.Player b) { p = b; }
         public string UserId => p.UserId;
-        public string Nickname { get => p.Nickname; set { } }
+        // Qurre-переименование = смена отображаемого имени. Реальный Steam-ник менять нельзя,
+        // поэтому пишем в DisplayName (раньше сеттер был молчаливым no-op — админ-rename не работал).
+        public string Nickname { get => p.Nickname; set => p.DisplayName = value; }
         public string DisplayName { get => p.DisplayName; set => p.DisplayName = value; }
         public string CustomInfo { get => p.CustomInfo; set => p.CustomInfo = value; }
         public global::PlayerInfoArea InfoToShow { get => _infoToShow; set => _infoToShow = value; }
@@ -193,7 +195,19 @@ namespace Qurre.API
         public float MaxHp { get => p.MaxHealth; set => p.MaxHealth = value; }
         public float Stamina { get => p.StaminaRemaining; set => p.StaminaRemaining = value; }
         public float Ahp { get => p.ArtificialHealth; set => p.ArtificialHealth = value; }
-        public float MaxAhp { get => p.MaxArtificialHealth; set { } }
+        // Раньше сеттер был no-op (бафф Sweep.MaxAhp=500 мёртв). Пишем через рефлексию, т.к.
+        // у MaxArtificialHealth в LabAPI может не быть публичного сеттера в этой версии — при
+        // отсутствии записи громко предупреждаем, как требует recovery-режим.
+        public float MaxAhp
+        {
+            get => p.MaxArtificialHealth;
+            set
+            {
+                var prop = typeof(Lab.Player).GetProperty("MaxArtificialHealth");
+                if (prop?.CanWrite == true) { try { prop.SetValue(p, value); return; } catch { } }
+                Qurre.API.Log.Warn($"Qurre-shim: MaxAhp set={value} не поддержан LabApi.Player (проверьте против LabApi.dll).");
+            }
+        }
         public List<AhpProcess> AhpActiveProcesses { get; } = new List<AhpProcess>();
         public void Heal(float amount) => p.Heal(amount);
         public void Heal(float amount, bool _) => p.Heal(amount);
@@ -223,10 +237,21 @@ namespace Qurre.API
             foreach (var item in items) AddItem(item);
         }
         public Lab.Item AddItem(ItemType item) => p.AddItem(item, InventorySystem.Items.ItemAddReason.AdminCommand);
-        public Lab.Item AddItem(ItemType item, ushort amount) => p.AddItem(item, InventorySystem.Items.ItemAddReason.AdminCommand);
-        public void RemoveItem(ushort serial) { try { p.DropItem(serial); } catch { } }
-        public void RemoveItem(ushort serial, bool destroy) { try { p.DropItem(serial); } catch { } }
-        public void RemoveItem(Lab.Item item) { if (item != null) RemoveItem(item.Serial); }
+        // Раньше amount игнорировался (всегда +1 предмет). Теперь добавляем нужное количество.
+        public Lab.Item AddItem(ItemType item, ushort amount)
+        {
+            Lab.Item last = null;
+            for (int i = 0; i < amount; i++) last = p.AddItem(item, InventorySystem.Items.ItemAddReason.AdminCommand);
+            return last;
+        }
+        // КОНФИСКАЦИЯ: раньше RemoveItem == DropItem — «изъятый» предмет падал под ноги и
+        // поднимался обратно (эксплойт RandomBuff/RealisticArmory). Теперь реально удаляем.
+        public void RemoveItem(ushort serial)
+        {
+            try { var it = p.Items?.FirstOrDefault(x => x.Serial == serial); if (it != null) p.RemoveItem(it); } catch { }
+        }
+        public void RemoveItem(ushort serial, bool destroy) => RemoveItem(serial);
+        public void RemoveItem(Lab.Item item) { try { if (item != null) p.RemoveItem(item); } catch { } }
         public void RemoveItem(InventoryItemCompat item) { if (item != null) RemoveItem(item.Serial); }
         public void SelectItem(ushort serial) { try { p.CurrentItem = p.Items.FirstOrDefault(x => x.Serial == serial); } catch { } }
     }
@@ -416,7 +441,16 @@ namespace Qurre.API
     {
         readonly Lab.Player p;
         public AdministrativeW(Lab.Player b) { p = b; }
-        public bool RemoteAdminAccess { get => p.RemoteAdminAccess; set { } }
+        public bool RemoteAdminAccess
+        {
+            get => p.RemoteAdminAccess;
+            set
+            {
+                var prop = typeof(Lab.Player).GetProperty("RemoteAdminAccess");
+                if (prop?.CanWrite == true) { try { prop.SetValue(p, value); return; } catch { } }
+                Qurre.API.Log.Warn($"Qurre-shim: RemoteAdminAccess set={value} не поддержан LabApi.Player (проверьте против LabApi.dll).");
+            }
+        }
         public bool RemoteAdmin => p.RemoteAdminAccess;
         public string GroupName => p.PermissionsGroupName;
         public string RoleName { get => p.ReferenceHub.serverRoles.Network_myText ?? string.Empty; set => p.ReferenceHub.serverRoles.Network_myText = value; }

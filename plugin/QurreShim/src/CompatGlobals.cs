@@ -20,12 +20,72 @@ public static class Paths
 
 public static class Alpha
 {
+    // Флаги выставляются обвязкой EventMap из LabAPI Warhead-событий (Started/Stopped/Detonated),
+    // а не этими методами — иначе при отмене старта боеголовки флаг оставался бы рассинхронен.
     public static bool Detonated { get; set; }
     public static bool Active { get; set; }
-    public static void Start() => Active = true;
-    public static void Stop() => Active = false;
-    public static void Detonate() { Detonated = true; Active = false; }
-    public static void Shake() { }
+
+    // Раньше методы только меняли флаги, не трогая реальную боеголовку: AutoAlpha/CO2/OmegaWarhead/
+    // NuclearAttack/Scp008 «запускали/останавливали» воображаемый отсчёт. Теперь дёргаем настоящий
+    // AlphaWarheadController через рефлексию (тип точно есть в Assembly-CSharp; рефлексия защищает
+    // от смены сигнатур между версиями SCP:SL и шумит в лог при промахе — как требует recovery-режим).
+    public static void Start() { Invoke("InstantPrepare"); Invoke("StartDetonation"); }
+    public static void Stop() => Invoke("CancelDetonation");
+    public static void Detonate() => Invoke("Detonate");
+    public static void Shake() { } // косметика, не в объёме правок
+
+    static readonly HashSet<string> _misses = new HashSet<string>();
+
+    static void Invoke(string methodName)
+    {
+        object controller = WarheadSingleton();
+        if (controller == null)
+        {
+            LogMiss("singleton", "Qurre-shim: AlphaWarheadController.Singleton == null — Alpha." + methodName + " проигнорирован.");
+            return;
+        }
+
+        var methods = controller.GetType()
+            .GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+            .Where(m => m.Name == methodName)
+            .OrderBy(m => m.GetParameters().Length)
+            .ToArray();
+
+        var method = methods.FirstOrDefault();
+        if (method == null)
+        {
+            LogMiss(methodName, $"Qurre-shim: метод AlphaWarheadController.{methodName} не найден — проверьте против Assembly-CSharp текущей версии.");
+            return;
+        }
+
+        var pars = method.GetParameters();
+        object[] args = pars.Select(p => p.HasDefaultValue
+            ? p.DefaultValue
+            : (p.ParameterType.IsValueType ? Activator.CreateInstance(p.ParameterType) : null)).ToArray();
+
+        try { method.Invoke(controller, args); }
+        catch (Exception ex) { LogMiss(methodName + ":ex", $"Qurre-shim: ошибка вызова AlphaWarheadController.{methodName}: {ex.InnerException?.Message ?? ex.Message}"); }
+    }
+
+    static object WarheadSingleton()
+    {
+        try
+        {
+            var type = typeof(AlphaWarheadController);
+            var prop = type.GetProperty("Singleton", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+            if (prop != null) return prop.GetValue(null);
+            var field = type.GetField("Singleton", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+            return field?.GetValue(null);
+        }
+        catch { return null; }
+    }
+
+    static void LogMiss(string key, string message)
+    {
+        lock (_misses)
+            if (!_misses.Add(key)) return;
+        Qurre.API.Log.Warn(message);
+    }
 }
 
 public static class GlobalLights

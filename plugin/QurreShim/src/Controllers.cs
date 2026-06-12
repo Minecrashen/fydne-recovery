@@ -377,6 +377,25 @@ namespace Qurre.API.Controllers
 
         void DispatchInteract(Lab.Player player)
             => Core.Dispatch(new InteractWorkStationEvent { Player = Player.Get(player), Station = this, Allowed = true });
+
+        /// <summary>Отписка и уничтожение сетевого toy + фантомного GameObject. Вызывается из
+        /// ShimState.ClearRoundState() — иначе toy'и/подписки/записи копились каждый раунд.</summary>
+        internal void DestroyToy()
+        {
+            try
+            {
+                if (_toy != null)
+                {
+                    _toy.OnSearching -= DispatchUpdate;
+                    _toy.OnInteracted -= DispatchInteract;
+                    try { _toy.Destroy(); } catch { }
+                    _toy = null;
+                }
+            }
+            catch { }
+            // Фантомный GameObject (конструктор без реального Base) уничтожаем тоже.
+            try { if (Base == null && _gameObject != null) UnityEngine.Object.Destroy(_gameObject); } catch { }
+        }
     }
 
     /// <summary>Управляемый бродкаст карты (Qurre MapBroadcast) — можно менять текст на лету.</summary>
