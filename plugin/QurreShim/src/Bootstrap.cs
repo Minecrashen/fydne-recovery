@@ -22,97 +22,59 @@ namespace Qurre
         }
         public override void Disable() => Qurre.API.Core.ShutdownAll();
 
+        // Загружаем Qurre-плагины (Loli.dll и т.п.), лежащие В ТОЙ ЖЕ папке, что и Qurre.dll.
+        // Раньше грузились ВСЕ dll из ВСЕХ подпапок LabAPI/plugins с дедупом по пути файла — это
+        // (а) тянуло чужие зависимости, которые LabAPI-лоадер сознательно не грузил, и (б) могло
+        // загрузить одну сборку дважды из разных путей → расщепление идентичности типов
+        // (InvalidCastException). Теперь: только своя папка + дедуп по имени сборки (AssemblyName.Name).
         static void LoadSiblingAssemblies()
         {
-            var loaded = AppDomain.CurrentDomain.GetAssemblies()
-                .Where(a => !a.IsDynamic)
-                .Select(a =>
-                {
-                    try
-                    {
-                        if (string.IsNullOrWhiteSpace(a.Location)) return string.Empty;
-                        return Path.GetFullPath(a.Location);
-                    }
-                    catch { return string.Empty; }
-                })
-                .Where(path => !string.IsNullOrEmpty(path))
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-            foreach (string dir in GetPluginDirectories())
+            var loadedNames = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var a in AppDomain.CurrentDomain.GetAssemblies())
             {
-                if (!Directory.Exists(dir)) continue;
+                if (a.IsDynamic) continue;
+                try { loadedNames.Add(a.GetName().Name); } catch { }
+            }
 
-                foreach (string dll in Directory.GetFiles(dir, "*.dll"))
+            string dir = ShimDirectory();
+            if (string.IsNullOrEmpty(dir) || !Directory.Exists(dir)) return;
+
+            foreach (string dll in Directory.GetFiles(dir, "*.dll"))
+            {
+                string name;
+                try { name = AssemblyName.GetAssemblyName(dll).Name; }
+                catch { continue; } // не управляемая .NET-сборка — пропускаем
+
+                if (!loadedNames.Add(name)) continue; // уже загружена по имени
+
+                try { Assembly.LoadFrom(Path.GetFullPath(dll)); }
+                catch (Exception ex)
                 {
-                    string full = Path.GetFullPath(dll);
-                    if (loaded.Contains(full)) continue;
-
-                    try
-                    {
-                        Assembly.LoadFrom(full);
-                        loaded.Add(full);
-                    }
-                    catch (Exception ex)
-                    {
-                        Qurre.API.Log.Error($"Qurre-shim: failed to load sibling assembly {Path.GetFileName(dll)}: {ex.Message}");
-                    }
+                    loadedNames.Remove(name);
+                    Qurre.API.Log.Error($"Qurre-shim: failed to load sibling assembly {Path.GetFileName(dll)}: {ex.Message}");
                 }
             }
         }
 
-        static string[] GetPluginDirectories()
+        static string ShimDirectory()
         {
-            var dirs = new System.Collections.Generic.List<string>();
-            AddAssemblyDirectory(dirs, Assembly.GetExecutingAssembly());
-            AddAssemblyDirectory(dirs, typeof(QurreBootstrap).Assembly);
-
-            string root = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            if (!string.IsNullOrWhiteSpace(root))
+            try
             {
-                string plugins = Path.Combine(root, "SCP Secret Laboratory", "LabAPI", "plugins");
-                if (Directory.Exists(plugins))
-                {
-                    foreach (string dir in Directory.GetDirectories(plugins))
-                        dirs.Add(dir);
-                }
+                string loc = typeof(QurreBootstrap).Assembly.Location;
+                if (!string.IsNullOrWhiteSpace(loc))
+                    return Path.GetDirectoryName(Path.GetFullPath(loc));
             }
-
-            return dirs
-                .Where(dir => !string.IsNullOrWhiteSpace(dir))
-                .Select(dir =>
-                {
-                    try { return Path.GetFullPath(dir); }
-                    catch { return string.Empty; }
-                })
-                .Where(dir => !string.IsNullOrEmpty(dir))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToArray();
-        }
-
-        static void AddAssemblyDirectory(System.Collections.Generic.List<string> dirs, Assembly assembly)
-        {
-            AddPathDirectory(dirs, assembly.Location);
+            catch { }
 
             try
             {
-                string codeBase = assembly.CodeBase;
+                string codeBase = typeof(QurreBootstrap).Assembly.CodeBase;
                 if (!string.IsNullOrWhiteSpace(codeBase))
-                    AddPathDirectory(dirs, new Uri(codeBase).LocalPath);
+                    return Path.GetDirectoryName(new Uri(codeBase).LocalPath);
             }
             catch { }
-        }
 
-        static void AddPathDirectory(System.Collections.Generic.List<string> dirs, string path)
-        {
-            if (string.IsNullOrWhiteSpace(path)) return;
-
-            try
-            {
-                string dir = Path.GetDirectoryName(path);
-                if (!string.IsNullOrWhiteSpace(dir))
-                    dirs.Add(dir);
-            }
-            catch { }
+            return null;
         }
     }
 }

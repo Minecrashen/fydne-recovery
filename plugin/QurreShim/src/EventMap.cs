@@ -136,6 +136,8 @@ namespace Qurre.API
             ServerHandlers.DoorDamaging += OnDoorDamaging;
             ServerHandlers.DoorLockChanged += OnDoorLockChanged;
 
+            PlayerHandlers.PreAuthenticating += OnPreAuthenticating;
+            PlayerHandlers.ProcessingJailbirdMessage += OnProcessingJailbird;
             PlayerHandlers.Joined += OnJoined;
             PlayerHandlers.Left += OnLeft;
             PlayerHandlers.Spawning += OnSpawning;
@@ -221,6 +223,8 @@ namespace Qurre.API
             ServerHandlers.DoorDamaging -= OnDoorDamaging;
             ServerHandlers.DoorLockChanged -= OnDoorLockChanged;
 
+            PlayerHandlers.PreAuthenticating -= OnPreAuthenticating;
+            PlayerHandlers.ProcessingJailbirdMessage -= OnProcessingJailbird;
             PlayerHandlers.Joined -= OnJoined;
             PlayerHandlers.Left -= OnLeft;
             PlayerHandlers.Spawning -= OnSpawning;
@@ -325,6 +329,7 @@ namespace Qurre.API
         }
         static void PushAllowed(dynamic args, EventBase ev) { try { args.IsAllowed = ev.Allowed; } catch { } }
         static float ReadDamage(object handler) { try { return (float)((dynamic)handler).Damage; } catch { return 0f; } }
+        static void WriteDamage(object handler, float value) { try { ((dynamic)handler).Damage = value; } catch { } }
         static T Prop<T>(object source, string name, T fallback = default)
         {
             if (source == null) return fallback;
@@ -437,16 +442,21 @@ namespace Qurre.API
         static void OnCommandExecuting(SArgs.CommandExecutingEventArgs args)
         {
             string[] argv = args.Arguments.ToArray();
-            if (args.CommandType == LabApi.Features.Enums.CommandType.RemoteAdmin)
+
+            // ВАЖНО: команды серверной консоли приходят с CommandType.Console (НЕ RemoteAdmin), а Qurre
+            // относил серверную консоль к RA-уровню — поэтому Fixes.FixCrashes (RemoteAdminCommandEvent,
+            // sender.SenderId == "SERVER CONSOLE") блокирует forceclass/give именно отсюда. Раньше Console
+            // уходил в GameConsoleCommandEvent (или вообще отсекался), и эта защита была мертва.
+            // RemoteAdmin + Console → RemoteAdminCommandEvent; Client (.console игрока) → GameConsoleCommandEvent.
+            if (args.CommandType == LabApi.Features.Enums.CommandType.RemoteAdmin ||
+                args.CommandType == LabApi.Features.Enums.CommandType.Console)
             {
                 var ev = Core.Dispatch(new RemoteAdminCommandEvent { Player = Q(args.Sender), Allowed = args.IsAllowed, Sender = args.Sender, Name = args.CommandName, Args = argv });
                 PushCommandResult(args, ev, true);
                 return;
             }
 
-            // Раньше здесь стоял `if (Console) return;` прямо перед `if (Client || Console)`,
-            // из-за чего ветка Console была мёртвой и консольные команды не порождали событий.
-            if (args.CommandType == LabApi.Features.Enums.CommandType.Client || args.CommandType == LabApi.Features.Enums.CommandType.Console)
+            if (args.CommandType == LabApi.Features.Enums.CommandType.Client)
             {
                 var ev = Core.Dispatch(new GameConsoleCommandEvent { Player = Q(args.Sender), Allowed = args.IsAllowed, Sender = args.Sender, Name = args.CommandName, Args = argv });
                 PushCommandResult(args, ev, false);
@@ -487,6 +497,28 @@ namespace Qurre.API
 
         static void OnJoined(PArgs.PlayerJoinedEventArgs args) => Core.Dispatch(new JoinEvent { Player = Q(args.Player) });
         static void OnLeft(PArgs.PlayerLeftEventArgs args) => Core.Dispatch(new LeaveEvent { Player = Q(args.Player) });
+        // Источник для CheckReserveSlot/CheckWhiteList (раньше эти события не имели источника и были
+        // мертвы — резерв-слоты/вайтлист админов молча не работали). LabAPI 1.1.7 не отдаёт контекст
+        // «сервер полон», поэтому это лучший доступный хук: события only-grant (флипают reject→allow для
+        // известных UserId), что безопасно. Полную семантику reserved-slot на полном сервере LabAPI не
+        // раскрывает — при необходимости нужен прямой доступ к игровой системе reserved-slots.
+        static void OnPreAuthenticating(PArgs.PlayerPreAuthenticatingEventArgs args)
+        {
+            var reserve = Core.Dispatch(new CheckReserveSlotEvent { UserId = args.UserId, Allowed = args.IsAllowed });
+            var whitelist = Core.Dispatch(new CheckWhiteListEvent { UserId = args.UserId, Allowed = reserve.Allowed });
+            args.IsAllowed = whitelist.Allowed;
+        }
+        static void OnProcessingJailbird(PArgs.PlayerProcessingJailbirdMessageEventArgs args)
+        {
+            var ev = Core.Dispatch(new JailbirdTriggerEvent
+            {
+                Player = Q(args.Player),
+                JailbirdBase = args.JailbirdItem?.Base,
+                Message = args.Message,
+                Allowed = args.IsAllowed
+            });
+            args.IsAllowed = ev.Allowed;
+        }
         static void OnSpawning(PArgs.PlayerSpawningEventArgs args)
         {
             var player = Q(args.Player);
@@ -507,18 +539,47 @@ namespace Qurre.API
         static void OnChangedRole(PArgs.PlayerChangedRoleEventArgs args) { var player = Q(args.Player); Core.Dispatch(new ChangeRoleEvent { Player = player, Target = player, Role = args.NewRole.RoleTypeId, OldRole = args.OldRole }); }
         static void OnDying(PArgs.PlayerDyingEventArgs args) { var player = Q(args.Player); ClassifyDamage(args.DamageHandler, out var lite, out var full); var ev = Core.Dispatch(new DiesEvent { Player = player, Target = player, Attacker = Q(args.Attacker), DamageInfo = args.DamageHandler, Damage = ReadDamage(args.DamageHandler), LiteType = lite, DamageType = full, Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }
         static void OnDeath(PArgs.PlayerDeathEventArgs args) { var player = Q(args.Player); ClassifyDamage(args.DamageHandler, out var lite, out var full); Core.Dispatch(new DeadEvent { Player = player, Target = player, Attacker = Q(args.Attacker), DamageInfo = args.DamageHandler, Damage = ReadDamage(args.DamageHandler), LiteType = lite, DamageType = full, OldRole = args.OldRole, Position = args.OldPosition }); }
-        static void OnHurting(PArgs.PlayerHurtingEventArgs args) { var player = Q(args.Player); ClassifyDamage(args.DamageHandler, out var lite, out var full); var ev = Core.Dispatch(new DamageEvent { Player = player, Target = player, Attacker = Q(args.Attacker), DamageInfo = args.DamageHandler, Damage = ReadDamage(args.DamageHandler), LiteType = lite, DamageType = full, Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }
-        static void OnHurt(PArgs.PlayerHurtEventArgs args) { var player = Q(args.Player); ClassifyDamage(args.DamageHandler, out var lite, out var full); Core.Dispatch(new AttackEvent { Player = player, Target = player, Attacker = Q(args.Attacker), DamageInfo = args.DamageHandler, Damage = ReadDamage(args.DamageHandler), LiteType = lite, DamageType = full }); }
+        // В Qurre И Damage, И Attack — PRE/отменяемые (Attack — патч на AttackerDamageHandler.ProcessDamage,
+        // т.е. урон с атакующим), и оба могут менять Damage. Раньше AttackEvent висел на post-хуке Hurt,
+        // поэтому Another.EndFF (ev.Allowed/ev.Damage) был no-op. Теперь оба диспатчатся на pre (Hurting),
+        // мутация Damage прокидывается обратно в DamageHandler.
+        static void OnHurting(PArgs.PlayerHurtingEventArgs args)
+        {
+            var player = Q(args.Player);
+            var attacker = Q(args.Attacker);
+            ClassifyDamage(args.DamageHandler, out var lite, out var full);
+            float dmg = ReadDamage(args.DamageHandler);
+
+            var damage = Core.Dispatch(new DamageEvent { Player = player, Target = player, Attacker = attacker, DamageInfo = args.DamageHandler, Damage = dmg, LiteType = lite, DamageType = full, Allowed = args.IsAllowed });
+            bool allowed = damage.Allowed;
+            float finalDamage = damage.Damage;
+
+            if (args.Attacker != null)
+            {
+                var attack = Core.Dispatch(new AttackEvent { Player = player, Target = player, Attacker = attacker, DamageInfo = args.DamageHandler, Damage = finalDamage, LiteType = lite, DamageType = full, Allowed = allowed });
+                allowed = attack.Allowed;
+                finalDamage = attack.Damage;
+            }
+
+            args.IsAllowed = allowed;
+            WriteDamage(args.DamageHandler, finalDamage);
+        }
+        // Hurt — post-уведомление LabAPI; в Qurre post-attack-события нет, поэтому здесь ничего не диспатчим
+        // (раньше тут стрелял AttackEvent — мутации игнорировались, т.к. урон уже применён).
+        static void OnHurt(PArgs.PlayerHurtEventArgs args) { }
+        // В Qurre InteractDoorEvent.Allowed = РАЗРЕШЕНИЕ игрока открыть дверь (карточка/замок) → CanOpen;
+        // OpenDoorEvent.Allowed = простая ОТМЕНА триггера открытия → IsAllowed. Раньше оба склеивались в
+        // один флаг и писались в оба поля, из-за чего хендлер OpenDoor мог открыть запертую дверь любому
+        // и перетереть отмену InteractDoor. Теперь два понятия разведены.
         static void OnInteractingDoor(PArgs.PlayerInteractingDoorEventArgs args)
         {
-            bool allowed = args.IsAllowed && args.CanOpen;
             var door = Door.Get(args.Door);
             var player = Q(args.Player);
 
-            var interact = Core.Dispatch(new InteractDoorEvent { Player = player, Door = door, Allowed = allowed });
-            var open = Core.Dispatch(new OpenDoorEvent { Player = player, Door = door, Allowed = interact.Allowed });
+            var interact = Core.Dispatch(new InteractDoorEvent { Player = player, Door = door, Allowed = args.CanOpen });
+            args.CanOpen = interact.Allowed;
 
-            args.CanOpen = open.Allowed;
+            var open = Core.Dispatch(new OpenDoorEvent { Player = player, Door = door, Allowed = args.IsAllowed });
             args.IsAllowed = open.Allowed;
         }
         static void OnPickingUpItem(PArgs.PlayerPickingUpItemEventArgs args) { var ev = Core.Dispatch(new PrePickupItemEvent { Player = Q(args.Player), Pickup = args.Pickup?.Base, Allowed = args.IsAllowed }); args.IsAllowed = ev.Allowed; }

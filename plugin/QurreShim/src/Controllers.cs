@@ -27,7 +27,7 @@ namespace Qurre.API.Controllers
     public class Room
     {
         public Lab.Room Base { get; }
-        Room(Lab.Room b) { Base = b; }
+        Room(Lab.Room b) { Base = b; Lights = new RoomLights(b); }
         public static Room Get(Lab.Room b) => b == null ? null : new Room(b);
         public Vector3 Position { get => Base?.Position ?? Vector3.zero; set { } }
         public Quaternion Rotation => Base?.Rotation ?? Quaternion.identity;
@@ -38,8 +38,15 @@ namespace Qurre.API.Controllers
         public List<Door> Doors => Base?.Doors?.Select(Door.Get).ToList() ?? new List<Door>();
         public List<Camera> Cameras => Base?.Cameras?.Select(Camera.Get).ToList() ?? new List<Camera>();
         public dynamic NetworkIdentity => Base?.GameObject?.GetComponent<Mirror.NetworkIdentity>();
-        public RoomLights Lights { get; } = new RoomLights();
-        public void LightsOff(float duration = 10f) { Lights.Enabled = false; }
+        public RoomLights Lights { get; }
+        // Раньше LightsOff только ставил флаг на отвязанном RoomLights (свет не гас никогда).
+        // FlickerLights(duration) гасит свет комнаты на duration секунд и сам восстанавливает —
+        // это и есть семантика Qurre LightsOff(duration).
+        public void LightsOff(float duration = 10f)
+        {
+            if (duration > 0f) Lights.FlickerOff(duration);
+            else Lights.Enabled = false;
+        }
 
         RoomType ResolveType()
         {
@@ -91,12 +98,47 @@ namespace Qurre.API.Controllers
         }
     }
 
+    // Реальная привязка к свету комнаты через LabAPI LightsController (раньше класс был отвязан
+    // от игры — Enabled/Color/Override ничего не делали, свет не гас и не красился).
     public class RoomLights
     {
-        public bool Enabled { get; set; } = true;
+        readonly Lab.Room _room;
+        bool _enabled = true;
+        bool _override;
+        Color _color = Color.white;
+
+        public RoomLights() { }
+        internal RoomLights(Lab.Room room) { _room = room; }
+
         public bool LockChange { get; set; }
-        public bool Override { get; set; }
-        public Color Color { get; set; } = Color.white;
+
+        public bool Enabled
+        {
+            get => _enabled;
+            set { _enabled = value; Apply(c => c.LightsEnabled = value); }
+        }
+
+        public bool Override
+        {
+            get => _override;
+            // true → применяем цвет-оверрайд; false → снимаем (прозрачный цвет = без оверрайда).
+            set { _override = value; Apply(c => c.OverrideLightsColor = value ? _color : Color.clear); }
+        }
+
+        public Color Color
+        {
+            get => _color;
+            set { _color = value; if (_override) Apply(c => c.OverrideLightsColor = value); }
+        }
+
+        internal void FlickerOff(float duration) => Apply(c => c.FlickerLights(duration));
+
+        void Apply(Action<Lab.LightsController> action)
+        {
+            if (_room == null) return;
+            try { foreach (var c in _room.AllLightControllers) if (c != null) action(c); }
+            catch { }
+        }
     }
 
     public class Door

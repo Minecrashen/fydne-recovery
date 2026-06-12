@@ -144,7 +144,10 @@ namespace Qurre.Events.Structs
     public class UseItemEvent : EventBase { }
     public class UsedItemEvent : EventBase { }
     public class UsingRadioEvent : EventBase { }
-    public class JailbirdTriggerEvent : EventBase { }
+    // Message затеняет строковый EventBase.Message: потребитель (RealCuffs) читает
+    // ev.Message как JailbirdMessageType. JailbirdBase (dynamic) — игровой JailbirdItem
+    // с .ItemSerial.
+    public class JailbirdTriggerEvent : EventBase { public new global::InventorySystem.Items.Jailbird.JailbirdMessageType Message; }
 
     // --- Эффекты ---
     public class EffectEnabledEvent : EventBase { public EffectType Type; public byte Intensity; public float Duration; }

@@ -195,19 +195,9 @@ namespace Qurre.API
         public float MaxHp { get => p.MaxHealth; set => p.MaxHealth = value; }
         public float Stamina { get => p.StaminaRemaining; set => p.StaminaRemaining = value; }
         public float Ahp { get => p.ArtificialHealth; set => p.ArtificialHealth = value; }
-        // Раньше сеттер был no-op (бафф Sweep.MaxAhp=500 мёртв). Пишем через рефлексию, т.к.
-        // у MaxArtificialHealth в LabAPI может не быть публичного сеттера в этой версии — при
-        // отсутствии записи громко предупреждаем, как требует recovery-режим.
-        public float MaxAhp
-        {
-            get => p.MaxArtificialHealth;
-            set
-            {
-                var prop = typeof(Lab.Player).GetProperty("MaxArtificialHealth");
-                if (prop?.CanWrite == true) { try { prop.SetValue(p, value); return; } catch { } }
-                Qurre.API.Log.Warn($"Qurre-shim: MaxAhp set={value} не поддержан LabApi.Player (проверьте против LabApi.dll).");
-            }
-        }
+        // Раньше сеттер был no-op (бафф Sweep.MaxAhp=500 мёртв). LabAPI 1.1.7 Player.MaxArtificialHealth
+        // имеет публичный сеттер (сбрасывается к AhpStat.DefaultMax при обнулении AHP).
+        public float MaxAhp { get => p.MaxArtificialHealth; set => p.MaxArtificialHealth = value; }
         public List<AhpProcess> AhpActiveProcesses { get; } = new List<AhpProcess>();
         public void Heal(float amount) => p.Heal(amount);
         public void Heal(float amount, bool _) => p.Heal(amount);
@@ -441,14 +431,17 @@ namespace Qurre.API
     {
         readonly Lab.Player p;
         public AdministrativeW(Lab.Player b) { p = b; }
+        static bool _raAccessWarned;
+        // LabAPI 1.1.7: Player.RemoteAdminAccess — только для чтения (геттер от serverRoles.RemoteAdmin).
+        // Прямой записи нет; для входа/выхода в RA используйте RaLogin()/RaLogout(). Предупреждаем один раз.
         public bool RemoteAdminAccess
         {
             get => p.RemoteAdminAccess;
             set
             {
-                var prop = typeof(Lab.Player).GetProperty("RemoteAdminAccess");
-                if (prop?.CanWrite == true) { try { prop.SetValue(p, value); return; } catch { } }
-                Qurre.API.Log.Warn($"Qurre-shim: RemoteAdminAccess set={value} не поддержан LabApi.Player (проверьте против LabApi.dll).");
+                if (_raAccessWarned) return;
+                _raAccessWarned = true;
+                Qurre.API.Log.Warn("Qurre-shim: RemoteAdminAccess set не поддержан LabApi.Player 1.1.7 (read-only). Используйте Administrative.RaLogin()/RaLogout().");
             }
         }
         public bool RemoteAdmin => p.RemoteAdminAccess;
